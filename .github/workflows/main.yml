@@ -48,4 +48,4 @@ jobs:
           prerelease: true
           title: "Development Build"
           files: |
-            *.apk
+            app/build/outputs/apk/release/app-release-unsigned-signed.apk
