@@ -132,7 +132,6 @@ class PlayerActivity : BasePlayerActivity() {
         }
 
         speedButton.setOnClickListener {
-
             SpeedSelectionDialogFragment(viewModel).show(
                 supportFragmentManager,
                 "speedselectiondialog"
