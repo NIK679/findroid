@@ -6,9 +6,9 @@ name: CI - Build signed apk
 on:
   # Triggers the workflow on push or pull request events but only for the playback-speed branch
   push:
-    branches: [ playback-speed ]
+    branches: [ develop ]
   pull_request:
-    branches: [ playback-speed ]
+    branches: [ develop ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -35,11 +35,11 @@ jobs:
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-      # 4
-      - uses: actions/upload-artifact@master
-        with:
-          name: release.apk
-          path: ${{steps.sign_app.outputs.signedReleaseFile}}
+#       # 4
+#       - uses: actions/upload-artifact@master
+#         with:
+#           name: release.apk
+#           path: ${{steps.sign_app.outputs.signedReleaseFile}}
       #5
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
