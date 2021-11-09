@@ -1219,13 +1219,6 @@ class MPVPlayer(
         throw IllegalArgumentException("You should use global volume controls. Check out AUDIO_SERVICE.")
     }
 
-    /** Select the playback speed in the current player.  */
-    fun selectPlaybackSpeed(speed: Float) {
-        if (getPlaybackParameters().speed != speed) {
-            MPVLib.setPropertyDouble("speed", speed.toDouble())
-        }
-    }
-
     private class CurrentTrackSelection(
         private val currentTrackGroup: TrackGroup,
         private val index: Int
