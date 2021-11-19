@@ -16,6 +16,6 @@ jobs:
         with:
           ref: "testing"
           fetch-depth: 0
-      - uses: pr-mpt/actions-merge-branch@v0
+      - uses: pr-mpt/actions-merge-branch@v2
         with:
           from: "origin/develop"
