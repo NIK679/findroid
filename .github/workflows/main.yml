@@ -40,13 +40,17 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
         
+      - name: Rename APK
+        id: rename
+        run: mv app/build/outputs/apk/release/app-release-unsigned-signed.apk app/build/outputs/apk/release/testing-${{ steps.date.outputs.date }}.apk
+        
       - name: Publish Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: develop-${{ steps.date.outputs.date }}
+          automatic_release_tag: testing-${{ steps.date.outputs.date }}
           prerelease: true
-          title: "Development Build"
+          title: "Testing Build"
           files: |
-            app/build/outputs/apk/release/app-release-unsigned-signed.apk
+            app/build/outputs/apk/release/testing-${{ steps.date.outputs.date }}.apk
  
