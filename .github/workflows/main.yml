@@ -18,13 +18,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1
+      
       - name: Checkout code
         uses: actions/checkout@v2
-      # 2
+      
       - name: Generate Release APK
         run: ./gradlew assembleRelease
-      # 3
+      
       - name: Sign APK
         uses: r0adkll/sign-android-release@v1
         # ID used to access action output
@@ -35,11 +35,16 @@ jobs:
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
-      #4
-      - uses: "marvinpinto/action-automatic-releases@latest"
+      
+      - name: Get current date
+        id: date
+        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+        
+      - name: Publish Release
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: "latest"
+          automatic_release_tag: develop-${{ steps.date.outputs.date }}
           prerelease: true
           title: "Development Build"
           files: |
