@@ -9,6 +9,8 @@ on:
   pull_request:
     branches:
       - "develop"
+  schedule:
+    - cron: '*/30 * * * *' # every 30 minutes
   workflow_dispatch:  # click the button on Github repo!
 
 jobs:
