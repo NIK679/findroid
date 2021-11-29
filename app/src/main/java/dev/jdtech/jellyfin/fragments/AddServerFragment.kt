@@ -30,6 +30,9 @@ class AddServerFragment : Fragment() {
     ): View {
         binding = FragmentAddServerBinding.inflate(inflater)
 
+        binding.lifecycleOwner = viewLifecycleOwner
+        binding.viewModel = viewModel
+
         binding.editTextServerAddress.setOnEditorActionListener { _, actionId, _ ->
             return@setOnEditorActionListener when (actionId) {
                 EditorInfo.IME_ACTION_GO -> {

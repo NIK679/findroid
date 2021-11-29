@@ -24,13 +24,18 @@ import java.util.UUID
  * @param baseUrl The url of the server
  * @constructor Creates a new [JellyfinApi] instance
  */
-class JellyfinApi(androidContext: Context) {
+class JellyfinApi(androidContext: Context, baseUrl: String) {
+
     val jellyfin = createJellyfin {
-        clientInfo =
-            ClientInfo(name = androidContext.applicationInfo.loadLabel(androidContext.packageManager).toString(), version = BuildConfig.VERSION_NAME)
+        clientInfo = ClientInfo(
+            name = androidContext.applicationInfo.loadLabel(androidContext.packageManager)
+                .toString(),
+            version = BuildConfig.VERSION_NAME
+        )
         context = androidContext
     }
-    val api = jellyfin.createApi()
+
+    val api = jellyfin.createApi(baseUrl = baseUrl)
     var userId: UUID? = null
 
     val devicesApi = api.devicesApi
@@ -49,13 +54,35 @@ class JellyfinApi(androidContext: Context) {
         @Volatile
         private var INSTANCE: JellyfinApi? = null
 
-        fun getInstance(context: Context): JellyfinApi {
+        /**
+         * Creates or gets a new instance of [JellyfinApi]
+         *
+         * If there already is an instance, it will return that instance and ignore the [baseUrl] parameter
+         *
+         * @param context The context
+         * @param baseUrl The url of the server
+         */
+        fun getInstance(context: Context, baseUrl: String): JellyfinApi {
             synchronized(this) {
                 var instance = INSTANCE
                 if (instance == null) {
-                    instance = JellyfinApi(context.applicationContext)
+                    instance = JellyfinApi(context.applicationContext, baseUrl)
                     INSTANCE = instance
                 }
+                return instance
+            }
+        }
+
+        /**
+         * Create a new [JellyfinApi] instance
+         *
+         * @param context The context
+         * @param baseUrl The url of the server
+         */
+        fun newInstance(context: Context, baseUrl: String): JellyfinApi {
+            synchronized(this) {
+                val instance = JellyfinApi(context.applicationContext, baseUrl)
+                INSTANCE = instance
                 return instance
             }
         }

@@ -1,7 +1,6 @@
 package dev.jdtech.jellyfin
 
-import android.content.Context
-import android.media.AudioManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
@@ -18,17 +17,19 @@ import dev.jdtech.jellyfin.dialogs.SpeedSelectionDialogFragment
 import dev.jdtech.jellyfin.dialogs.TrackSelectionDialogFragment
 import dev.jdtech.jellyfin.mpv.MPVPlayer
 import dev.jdtech.jellyfin.mpv.TrackType
-import dev.jdtech.jellyfin.utils.PlayerGestureHelper
+import dev.jdtech.jellyfin.utils.AudioController
+import dev.jdtech.jellyfin.utils.VerticalSwipeListener
 import dev.jdtech.jellyfin.viewmodels.PlayerActivityViewModel
 import timber.log.Timber
+import kotlin.math.max
 
 @AndroidEntryPoint
 class PlayerActivity : BasePlayerActivity() {
 
-    lateinit var binding: ActivityPlayerBinding
-    private lateinit var playerGestureHelper: PlayerGestureHelper
+    private lateinit var binding: ActivityPlayerBinding
     override val viewModel: PlayerActivityViewModel by viewModels()
     private val args: PlayerActivityArgs by navArgs()
+    private val audioController by lazy { AudioController(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,10 +42,9 @@ class PlayerActivity : BasePlayerActivity() {
         binding.playerView.player = viewModel.player
 
         val playerControls = binding.playerView.findViewById<View>(R.id.player_controls)
+        setupVolumeControl()
 
         configureInsets(playerControls)
-
-        playerGestureHelper = PlayerGestureHelper(this, binding.playerView, getSystemService(Context.AUDIO_SERVICE) as AudioManager)
 
         binding.playerView.findViewById<View>(R.id.back_button).setOnClickListener {
             onBackPressed()
@@ -157,6 +157,20 @@ class PlayerActivity : BasePlayerActivity() {
 
         viewModel.initializePlayer(args.items)
         hideSystemUI()
+    }
+
+    private fun setupVolumeControl() {
+        val height = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            windowManager.currentWindowMetrics.bounds.height()
+        } else {
+            windowManager.defaultDisplay.height
+        }
+        binding.playerView.setOnTouchListener(VerticalSwipeListener(
+            onUp = { audioController.volumeUp() },
+            onDown = { audioController.volumeDown() },
+            onTouch = { audioController.showVolumeSlider() },
+            threshold = max(height / 8, 100)
+        ))
     }
 }
 

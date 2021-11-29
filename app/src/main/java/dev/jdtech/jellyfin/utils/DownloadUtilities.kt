@@ -1,11 +1,17 @@
 package dev.jdtech.jellyfin.utils
 
+import android.Manifest
 import android.app.DownloadManager
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 import androidx.fragment.app.Fragment
+import dev.jdtech.jellyfin.R
 import dev.jdtech.jellyfin.models.DownloadMetadata
 import dev.jdtech.jellyfin.models.DownloadRequestItem
 import dev.jdtech.jellyfin.models.PlayerItem
@@ -16,9 +22,46 @@ import timber.log.Timber
 import java.io.File
 import java.util.UUID
 
-var defaultStorage: File? = null
-
 fun requestDownload(uri: Uri, downloadRequestItem: DownloadRequestItem, context: Fragment) {
+    // Storage permission for downloads isn't necessary from Android 10 onwards
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
+        @Suppress("MagicNumber")
+        Timber.d("REQUESTING PERMISSION")
+
+        if (ContextCompat.checkSelfPermission(
+                context.requireActivity(),
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    context.requireActivity(),
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                )
+            ) {
+                ActivityCompat.requestPermissions(
+                    context.requireActivity(),
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1
+                )
+            } else {
+                ActivityCompat.requestPermissions(
+                    context.requireActivity(),
+                    arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), 1
+                )
+            }
+        }
+
+        val granted = ContextCompat.checkSelfPermission(
+            context.requireActivity(),
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!granted) {
+            context.requireContext().toast(R.string.download_no_storage_permission)
+            return
+        }
+    }
+    val defaultStorage = getDownloadLocation(context.requireContext())
+    Timber.d(defaultStorage.toString())
     val downloadRequest = DownloadManager.Request(uri)
         .setTitle(downloadRequestItem.metadata.name)
         .setDescription("Downloading")
@@ -32,13 +75,16 @@ fun requestDownload(uri: Uri, downloadRequestItem: DownloadRequestItem, context:
         )
         .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
     if (!File(defaultStorage, downloadRequestItem.itemId.toString()).exists())
-        downloadFile(downloadRequest, context.requireContext())
+        downloadFile(downloadRequest, 1, context.requireContext())
     createMetadataFile(
         downloadRequestItem.metadata,
-        downloadRequestItem.itemId)
+        downloadRequestItem.itemId,
+        context.requireContext()
+    )
 }
 
-private fun createMetadataFile(metadata: DownloadMetadata, itemId: UUID) {
+private fun createMetadataFile(metadata: DownloadMetadata, itemId: UUID, context: Context) {
+    val defaultStorage = getDownloadLocation(context)
     val metadataFile = File(defaultStorage, "${itemId}.metadata")
 
     metadataFile.writeText("") //This might be necessary to make sure that the metadata file is empty
@@ -54,8 +100,6 @@ private fun createMetadataFile(metadata: DownloadMetadata, itemId: UUID) {
             out.println(metadata.playbackPosition.toString())
             out.println(metadata.playedPercentage.toString())
             out.println(metadata.seriesId.toString())
-            out.println(metadata.played.toString())
-            out.println(if (metadata.overview != null) metadata.overview.replace("\n", "\\n") else "")
         }
     } else if (metadata.type == "Movie") {
         metadataFile.printWriter().use { out ->
@@ -64,14 +108,13 @@ private fun createMetadataFile(metadata: DownloadMetadata, itemId: UUID) {
             out.println(metadata.name.toString())
             out.println(metadata.playbackPosition.toString())
             out.println(metadata.playedPercentage.toString())
-            out.println(metadata.played.toString())
-            out.println(if (metadata.overview != null) metadata.overview.replace("\n", "\\n") else "")
         }
     }
 
 }
 
-private fun downloadFile(request: DownloadManager.Request, context: Context) {
+private fun downloadFile(request: DownloadManager.Request, downloadMethod: Int, context: Context) {
+    require(downloadMethod >= 0) { "Download method hasn't been set" }
     request.apply {
         setAllowedOverMetered(false)
         setAllowedOverRoaming(false)
@@ -79,12 +122,13 @@ private fun downloadFile(request: DownloadManager.Request, context: Context) {
     context.getSystemService<DownloadManager>()?.enqueue(request)
 }
 
-fun loadDownloadLocation(context: Context) {
-    defaultStorage = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
+private fun getDownloadLocation(context: Context): File? {
+    return context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
 }
 
-fun loadDownloadedEpisodes(): List<PlayerItem> {
+fun loadDownloadedEpisodes(context: Context): List<PlayerItem> {
     val items = mutableListOf<PlayerItem>()
+    val defaultStorage = getDownloadLocation(context)
     defaultStorage?.walk()?.forEach {
         if (it.isFile && it.extension == "") {
             try {
@@ -110,29 +154,6 @@ fun loadDownloadedEpisodes(): List<PlayerItem> {
     return items.toList()
 }
 
-fun itemIsDownloaded(itemId: UUID): Boolean {
-    val file = File(defaultStorage!!, itemId.toString())
-    if (file.isFile && file.extension == "") {
-        if (File(defaultStorage, "${itemId}.metadata").exists()){
-            return true
-        }
-    }
-    return false
-}
-
-fun getDownloadPlayerItem(itemId: UUID): PlayerItem? {
-    val file = File(defaultStorage!!, itemId.toString())
-    try{
-        val metadataFile = File(defaultStorage, "${file.name}.metadata").readLines()
-        val metadata = parseMetadataFile(metadataFile)
-        return PlayerItem(metadata.name, UUID.fromString(file.name), "", metadata.playbackPosition!!, file.absolutePath, metadata)
-    } catch (e: Exception) {
-        file.delete()
-        Timber.e(e)
-    }
-    return null
-}
-
 fun deleteDownloadedEpisode(uri: String) {
     try {
         File(uri).delete()
@@ -154,7 +175,7 @@ fun postDownloadPlaybackProgress(uri: String, playbackPosition: Long, playedPerc
             metadataArray[3] = playbackPosition.toString()
             metadataArray[4] = playedPercentage.toString()
         }
-        Timber.d("PLAYEDPERCENTAGE $playedPercentage")
+
         metadataFile.writeText("") //This might be necessary to make sure that the metadata file is empty
         metadataFile.printWriter().use { out ->
             metadataArray.forEach {
@@ -183,8 +204,7 @@ fun downloadMetadataToBaseItemDto(metadata: DownloadMetadata): BaseItemDto {
         parentIndexNumber = metadata.parentIndexNumber,
         indexNumber = metadata.indexNumber,
         userData = userData,
-        seriesId = metadata.seriesId,
-        overview = metadata.overview
+        seriesId = metadata.seriesId
     )
 }
 
@@ -198,9 +218,7 @@ fun baseItemDtoToDownloadMetadata(item: BaseItemDto): DownloadMetadata {
         indexNumber = item.indexNumber,
         playbackPosition = item.userData?.playbackPositionTicks ?: 0,
         playedPercentage = item.userData?.playedPercentage,
-        seriesId = item.seriesId,
-        played = item.userData?.played,
-        overview = item.overview
+        seriesId = item.seriesId
     )
 }
 
@@ -219,9 +237,7 @@ fun parseMetadataFile(metadataFile: List<String>): DownloadMetadata {
             } else {
                 metadataFile[7].toDouble()
             },
-            seriesId = UUID.fromString(metadataFile[8]),
-            played = metadataFile[9].toBoolean(),
-            overview = metadataFile[10].replace("\\n", "\n")
+            seriesId = UUID.fromString(metadataFile[8])
         )
     } else {
         return DownloadMetadata(
@@ -234,14 +250,12 @@ fun parseMetadataFile(metadataFile: List<String>): DownloadMetadata {
             } else {
                 metadataFile[4].toDouble()
             },
-            played = metadataFile[5].toBoolean(),
-            overview = metadataFile[6].replace("\\n", "\n")
         )
     }
 }
 
-suspend fun syncPlaybackProgress(jellyfinRepository: JellyfinRepository) {
-    val items = loadDownloadedEpisodes()
+suspend fun syncPlaybackProgress(jellyfinRepository: JellyfinRepository, context: Context) {
+    val items = loadDownloadedEpisodes(context)
     items.forEach() {
         try {
             val localPlaybackProgress = it.metadata?.playbackPosition
@@ -253,10 +267,6 @@ suspend fun syncPlaybackProgress(jellyfinRepository: JellyfinRepository) {
 
             var playbackProgress: Long = 0
             var playedPercentage = 0.0
-
-            if (it.metadata?.played == true || item.userData?.played == true){
-                return@forEach
-            }
 
             if (localPlaybackProgress != null) {
                 if (localPlaybackProgress > playbackProgress) {

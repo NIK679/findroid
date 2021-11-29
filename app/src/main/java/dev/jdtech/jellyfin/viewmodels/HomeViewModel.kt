@@ -27,7 +27,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject internal constructor(
-    application: Application,
+    private val application: Application,
     private val repository: JellyfinRepository
 ) : ViewModel() {
 
@@ -67,7 +67,7 @@ class HomeViewModel @Inject internal constructor(
                 views.postValue(updated)
 
                 withContext(Dispatchers.Default) {
-                    syncPlaybackProgress(repository)
+                    syncPlaybackProgress(repository, application)
                 }
                 state.tryEmit(Loading(inProgress = false))
             } catch (e: Exception) {

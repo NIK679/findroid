@@ -6,8 +6,6 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jdtech.jellyfin.models.PlayerItem
 import dev.jdtech.jellyfin.repository.JellyfinRepository
-import dev.jdtech.jellyfin.utils.getDownloadPlayerItem
-import dev.jdtech.jellyfin.utils.itemIsDownloaded
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
@@ -37,15 +35,8 @@ class PlayerViewModel @Inject internal constructor(
     fun loadPlayerItems(
         item: BaseItemDto,
         mediaSourceIndex: Int = 0,
-        onVersionSelectRequired: () -> Unit = { }
+        onVersionSelectRequired: () -> Unit = { Unit }
     ) {
-        if (itemIsDownloaded(item.id)) {
-            val playerItem = getDownloadPlayerItem(item.id)
-            if (playerItem != null) {
-                loadOfflinePlayerItems(playerItem)
-                return
-            }
-        }
         Timber.d("Loading player items for item ${item.id}")
         if (item.mediaSources.orEmpty().size > 1) {
             onVersionSelectRequired()
