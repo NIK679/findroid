@@ -26,7 +26,7 @@ jobs:
     # Step 2: run the sync action
     - name: Sync upstream changes
       id: sync
-      uses: aormsby/Fork-Sync-With-Upstream-action@v3.1
+      uses: aormsby/Fork-Sync-With-Upstream-action@v3.2
       with:
         target_sync_branch: develop
         # REQUIRED 'target_repo_token' exactly like this!
