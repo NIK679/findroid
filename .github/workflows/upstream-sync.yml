@@ -16,3 +16,4 @@ jobs:
           owner: jarnedemeulemeester
           base: develop
           head: develop
+          merge_method: squash
