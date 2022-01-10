@@ -2,20 +2,16 @@ package dev.jdtech.jellyfin
 
 import android.view.View
 import android.widget.ImageView
+import androidx.annotation.DrawableRes
 import androidx.databinding.BindingAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import dev.jdtech.jellyfin.adapters.DownloadsListAdapter
 import dev.jdtech.jellyfin.adapters.HomeEpisodeListAdapter
-import dev.jdtech.jellyfin.adapters.HomeItem
-import dev.jdtech.jellyfin.adapters.PersonListAdapter
 import dev.jdtech.jellyfin.adapters.ServerGridAdapter
 import dev.jdtech.jellyfin.adapters.ViewItemListAdapter
-import dev.jdtech.jellyfin.adapters.ViewListAdapter
 import dev.jdtech.jellyfin.api.JellyfinApi
 import dev.jdtech.jellyfin.database.Server
-import dev.jdtech.jellyfin.models.DownloadSection
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemPerson
 import org.jellyfin.sdk.model.api.ImageType
@@ -57,16 +53,10 @@ fun bindItemBackdropById(imageView: ImageView, itemId: UUID) {
     imageView.loadImage("/items/$itemId/Images/${ImageType.BACKDROP}")
 }
 
-@BindingAdapter("people")
-fun bindPeople(recyclerView: RecyclerView, data: List<BaseItemPerson>?) {
-    val adapter = recyclerView.adapter as PersonListAdapter
-    adapter.submitList(data)
-}
-
 @BindingAdapter("personImage")
 fun bindPersonImage(imageView: ImageView, person: BaseItemPerson) {
     imageView
-        .loadImage("/items/${person.id}/Images/${ImageType.PRIMARY}")
+        .loadImage("/items/${person.id}/Images/${ImageType.PRIMARY}", R.drawable.person_placeholder)
         .posterDescription(person.name)
 }
 
@@ -113,7 +103,7 @@ fun bindSeasonPoster(imageView: ImageView, seasonId: UUID) {
     imageView.loadImage("/items/${seasonId}/Images/${ImageType.PRIMARY}")
 }
 
-private fun ImageView.loadImage(url: String, errorPlaceHolderId: Int? = null): View {
+private fun ImageView.loadImage(url: String, @DrawableRes errorPlaceHolderId: Int? = null): View {
     val api = JellyfinApi.getInstance(context.applicationContext)
 
     return Glide
@@ -121,15 +111,17 @@ private fun ImageView.loadImage(url: String, errorPlaceHolderId: Int? = null): V
         .load("${api.api.baseUrl}$url")
         .transition(DrawableTransitionOptions.withCrossFade())
         .placeholder(R.color.neutral_800)
-        .also { if (errorPlaceHolderId != null) error(errorPlaceHolderId) }
+        .error(errorPlaceHolderId)
         .into(this)
         .view
 }
 
 private fun View.posterDescription(name: String?) {
-    contentDescription = String.format(context.resources.getString(R.string.image_description_poster), name)
+    contentDescription =
+        String.format(context.resources.getString(R.string.image_description_poster), name)
 }
 
 private fun View.backdropDescription(name: String?) {
-    contentDescription = String.format(context.resources.getString(R.string.image_description_backdrop), name)
+    contentDescription =
+        String.format(context.resources.getString(R.string.image_description_backdrop), name)
 }
