@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory app:title="@string/settings_category_language">
 
@@ -47,6 +48,17 @@
             app:title="@string/display_extended_title" />
     </PreferenceCategory>
 
+    <PreferenceCategory app:title="@string/settings_category_download">
+        <SwitchPreference
+            app:key="download_mobile_data"
+            app:title="@string/download_mobile_data"
+            android:defaultValue="false" />
+        <SwitchPreference
+            app:key="download_roaming"
+            app:title="@string/download_roaming"
+            android:defaultValue="false" />
+    </PreferenceCategory>
+
     <PreferenceCategory app:title="@string/settings_category_player">
         <SwitchPreference
             app:key="mpv_player"
@@ -57,6 +69,10 @@
             app:key="mpv_disable_hwdec"
             app:summary="@string/force_software_decoding_summary"
             app:title="@string/force_software_decoding" />
+        <SwitchPreference
+            app:key="display_extended_title"
+            app:summary="@string/display_extended_title_summary"
+            app:title="@string/display_extended_title" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/settings_category_device">

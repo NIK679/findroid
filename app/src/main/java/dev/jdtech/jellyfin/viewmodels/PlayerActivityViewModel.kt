@@ -188,12 +188,12 @@ constructor(
                         if (sp.getBoolean(
                                 "display_extended_title",
                                 false
-                            ) && item.parentIndexNumber != null && item.indexNumber != null
+                            ) && item.parentIndexNumber != null && item.indexNumber != null && item.name != null
                         )
                             _currentItemTitle.value =
                                 "S${item.parentIndexNumber}:E${item.indexNumber} - ${item.name}"
                         else
-                            _currentItemTitle.value = item.name
+                            _currentItemTitle.value = item.name.orEmpty()
                     }
                 }
                 jellyfinRepository.postPlaybackStart(UUID.fromString(mediaItem?.mediaId))
