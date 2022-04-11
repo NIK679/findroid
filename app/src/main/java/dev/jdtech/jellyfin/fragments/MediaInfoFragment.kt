@@ -28,6 +28,8 @@ import dev.jdtech.jellyfin.dialogs.ErrorDialogFragment
 import dev.jdtech.jellyfin.dialogs.VideoVersionDialogFragment
 import dev.jdtech.jellyfin.models.PlayerItem
 import dev.jdtech.jellyfin.utils.checkIfLoginRequired
+import dev.jdtech.jellyfin.utils.setTintColor
+import dev.jdtech.jellyfin.utils.setTintColorAttribute
 import dev.jdtech.jellyfin.viewmodels.MediaInfoViewModel
 import dev.jdtech.jellyfin.viewmodels.PlayerViewModel
 import kotlinx.coroutines.launch
@@ -147,11 +149,11 @@ class MediaInfoFragment : Fragment() {
                 when (viewModel.played) {
                     true -> {
                         viewModel.markAsUnplayed(args.itemId)
-                        binding.checkButton.setImageResource(R.drawable.ic_check)
+                        binding.checkButton.setTintColorAttribute(R.attr.colorOnSecondaryContainer, requireActivity().theme)
                     }
                     false -> {
                         viewModel.markAsPlayed(args.itemId)
-                        binding.checkButton.setImageResource(R.drawable.ic_check_filled)
+                        binding.checkButton.setTintColor(R.color.red, requireActivity().theme)
                     }
                 }
             }
@@ -161,10 +163,12 @@ class MediaInfoFragment : Fragment() {
                     true -> {
                         viewModel.unmarkAsFavorite(args.itemId)
                         binding.favoriteButton.setImageResource(R.drawable.ic_heart)
+                        binding.favoriteButton.setTintColorAttribute(R.attr.colorOnSecondaryContainer, requireActivity().theme)
                     }
                     false -> {
                         viewModel.markAsFavorite(args.itemId)
                         binding.favoriteButton.setImageResource(R.drawable.ic_heart_filled)
+                        binding.favoriteButton.setTintColor(R.color.red, requireActivity().theme)
                     }
                 }
             }
@@ -206,11 +210,11 @@ class MediaInfoFragment : Fragment() {
             binding.playButton.alpha = if (!available) 0.5F else 1.0F
 
             // Check icon
-            val checkDrawable = when (played) {
-                true -> R.drawable.ic_check_filled
-                false -> R.drawable.ic_check
+            when (played) {
+                true -> binding.checkButton.setTintColor(R.color.red, requireActivity().theme)
+                false -> binding.checkButton.setTintColorAttribute(R.attr.colorOnSecondaryContainer, requireActivity().theme)
             }
-            binding.checkButton.setImageResource(checkDrawable)
+
 
             // Favorite icon
             val favoriteDrawable = when (favorite) {
@@ -218,6 +222,7 @@ class MediaInfoFragment : Fragment() {
                 false -> R.drawable.ic_heart
             }
             binding.favoriteButton.setImageResource(favoriteDrawable)
+            if (favorite) binding.favoriteButton.setTintColor(R.color.red, requireActivity().theme)
 
             binding.downloadButton.isEnabled = !downloaded
 
@@ -226,12 +231,7 @@ class MediaInfoFragment : Fragment() {
                     binding.downloadButton.isVisible = true
                     binding.downloadButton.isEnabled = !downloaded
 
-                    if (downloaded) binding.downloadButton.imageTintList = ColorStateList.valueOf(
-                        resources.getColor(
-                            R.color.red,
-                            requireActivity().theme
-                        )
-                    )
+                    if (downloaded) binding.downloadButton.setTintColor(R.color.red, requireActivity().theme)
                 }
                 false -> {
                     binding.downloadButton.isVisible = false
