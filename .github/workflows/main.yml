@@ -39,7 +39,7 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           
-      - name: Sign Release APK
+      - name: Sign Debug APK
         uses: r0adkll/sign-android-release@v1
         # ID used to access action output
         id: sign_app_debug
