@@ -9,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import android.widget.Toast.LENGTH_LONG
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -23,15 +25,11 @@ import dev.jdtech.jellyfin.adapters.ViewItemListAdapter
 import dev.jdtech.jellyfin.adapters.ViewListAdapter
 import dev.jdtech.jellyfin.databinding.FragmentHomeBinding
 import dev.jdtech.jellyfin.dialogs.ErrorDialogFragment
-import dev.jdtech.jellyfin.models.ContentType
-import dev.jdtech.jellyfin.models.ContentType.EPISODE
-import dev.jdtech.jellyfin.models.ContentType.MOVIE
-import dev.jdtech.jellyfin.models.ContentType.TVSHOW
 import dev.jdtech.jellyfin.utils.checkIfLoginRequired
-import dev.jdtech.jellyfin.utils.contentType
 import dev.jdtech.jellyfin.viewmodels.HomeViewModel
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemDto
+import org.jellyfin.sdk.model.api.BaseItemKind
 import timber.log.Timber
 
 @AndroidEntryPoint
@@ -41,25 +39,6 @@ class HomeFragment : Fragment() {
     private val viewModel: HomeViewModel by viewModels()
 
     private lateinit var errorDialog: ErrorDialogFragment
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setHasOptionsMenu(true)
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        inflater.inflate(R.menu.home_menu, menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        return when (item.itemId) {
-            R.id.action_settings -> {
-                navigateToSettingsFragment()
-                true
-            }
-            else -> super.onOptionsItemSelected(item)
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -72,6 +51,27 @@ class HomeFragment : Fragment() {
         bindState()
 
         return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.home_menu, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.action_settings -> {
+                        navigateToSettingsFragment()
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onResume() {
@@ -91,9 +91,9 @@ class HomeFragment : Fragment() {
                 navigateToMediaInfoFragment(it)
             },
             onNextUpClickListener = HomeEpisodeListAdapter.OnClickListener { item ->
-                when (item.contentType()) {
-                    EPISODE -> navigateToEpisodeBottomSheetFragment(item)
-                    MOVIE -> navigateToMediaInfoFragment(item)
+                when (item.type) {
+                    BaseItemKind.EPISODE -> navigateToEpisodeBottomSheetFragment(item)
+                    BaseItemKind.MOVIE -> navigateToMediaInfoFragment(item)
                     else -> Toast.makeText(requireContext(), R.string.unknown_error, LENGTH_LONG)
                         .show()
                 }
@@ -139,13 +139,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun bindUiStateError(uiState: HomeViewModel.UiState.Error) {
-        val error = uiState.message ?: getString(R.string.unknown_error)
-        errorDialog = ErrorDialogFragment(error)
+        errorDialog = ErrorDialogFragment(uiState.error)
         binding.loadingIndicator.isVisible = false
         binding.refreshLayout.isRefreshing = false
         binding.viewsRecyclerView.isVisible = false
         binding.errorLayout.errorPanel.isVisible = true
-        checkIfLoginRequired(error)
+        checkIfLoginRequired(uiState.error.message)
     }
 
     private fun navigateToLibraryFragment(view: dev.jdtech.jellyfin.models.View) {
@@ -159,12 +158,12 @@ class HomeFragment : Fragment() {
     }
 
     private fun navigateToMediaInfoFragment(item: BaseItemDto) {
-        if (item.contentType() == EPISODE) {
+        if (item.type == BaseItemKind.EPISODE) {
             findNavController().navigate(
                 HomeFragmentDirections.actionNavigationHomeToMediaInfoFragment(
                     item.seriesId!!,
                     item.seriesName,
-                    TVSHOW.type
+                    BaseItemKind.SERIES
                 )
             )
         } else {
@@ -172,7 +171,7 @@ class HomeFragment : Fragment() {
                 HomeFragmentDirections.actionNavigationHomeToMediaInfoFragment(
                     item.id,
                     item.name,
-                    item.type ?: ContentType.UNKNOWN.type
+                    item.type
                 )
             )
         }

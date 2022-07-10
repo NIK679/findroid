@@ -1,13 +1,13 @@
 package dev.jdtech.jellyfin.viewmodels
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jdtech.jellyfin.database.Server
 import dev.jdtech.jellyfin.database.ServerDatabaseDao
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -19,12 +19,11 @@ class MainViewModel
 constructor(
     private val database: ServerDatabaseDao,
 ) : ViewModel() {
+    private val navigateToAddServer = MutableSharedFlow<Boolean>()
 
-    private val _doneLoading = MutableLiveData<Boolean>()
-    val doneLoading: LiveData<Boolean> = _doneLoading
-
-    private val _navigateToAddServer = MutableLiveData<Boolean>()
-    val navigateToAddServer: LiveData<Boolean> = _navigateToAddServer
+    fun onNavigateToAddServer(scope: LifecycleCoroutineScope, collector: (Boolean) -> Unit) {
+        scope.launch { navigateToAddServer.collect { collector(it) } }
+    }
 
     init {
         Timber.d("Start Main")
@@ -34,14 +33,8 @@ constructor(
                 servers = database.getAllServersSync()
             }
             if (servers.isEmpty()) {
-                _navigateToAddServer.value = true
+                navigateToAddServer.emit(true)
             }
-            _doneLoading.value = true
         }
-        _doneLoading.value = true
-    }
-
-    fun doneNavigateToAddServer() {
-        _navigateToAddServer.value = false
     }
 }

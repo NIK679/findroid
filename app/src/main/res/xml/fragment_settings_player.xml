@@ -21,12 +21,36 @@
         <SwitchPreference
             app:defaultValue="true"
             app:key="pref_player_gestures"
-            app:summary="@string/player_gestures_summary"
             app:title="@string/player_gestures" />
         <SwitchPreference
+            app:defaultValue="true"
             app:dependency="pref_player_gestures"
+            app:key="pref_player_gestures_vb"
+            app:summary="@string/player_gestures_vb_summary"
+            app:title="@string/player_gestures_vb" />
+        <SwitchPreference
+            app:defaultValue="true"
+            app:dependency="pref_player_gestures"
+            app:key="pref_player_gestures_zoom"
+            app:summary="@string/player_gestures_zoom_summary"
+            app:title="@string/player_gestures_zoom" />
+        <SwitchPreference
+            app:dependency="pref_player_gestures_vb"
             app:key="pref_player_brightness_remember"
             app:title="@string/player_brightness_remember" />
+    </PreferenceCategory>
+
+    <PreferenceCategory app:title="@string/seeking">
+        <EditTextPreference
+            app:defaultValue="5000"
+            app:key="pref_player_seek_back_inc"
+            app:title="@string/seek_back_increment"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:defaultValue="15000"
+            app:key="pref_player_seek_forward_inc"
+            app:title="@string/seek_forward_increment"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
 </PreferenceScreen>

@@ -45,7 +45,7 @@ class LoginFragment : Fragment() {
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
-            repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.onUiState(viewLifecycleOwner.lifecycleScope) { uiState ->
                     Timber.d("$uiState")
                     when(uiState) {
@@ -67,15 +67,18 @@ class LoginFragment : Fragment() {
     }
 
     private fun bindUiStateNormal() {
+        binding.buttonLogin.isEnabled = true
         binding.progressCircular.isVisible = false
     }
 
     private fun bindUiStateError(uiState: LoginViewModel.UiState.Error) {
+        binding.buttonLogin.isEnabled = true
         binding.progressCircular.isVisible = false
         binding.editTextUsernameLayout.error = uiState.message
     }
 
     private fun bindUiStateLoading() {
+        binding.buttonLogin.isEnabled = false
         binding.progressCircular.isVisible = true
         binding.editTextUsernameLayout.error = null
     }
@@ -88,6 +91,6 @@ class LoginFragment : Fragment() {
     }
 
     private fun navigateToMainActivity() {
-        findNavController().navigate(LoginFragmentDirections.actionLoginFragment2ToNavigationHome())
+        findNavController().navigate(LoginFragmentDirections.actionLoginFragmentToNavigationHome())
     }
 }

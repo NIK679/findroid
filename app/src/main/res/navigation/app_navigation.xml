@@ -114,8 +114,8 @@
             app:nullable="true" />
         <argument
             android:name="itemType"
-            android:defaultValue="unknown"
-            app:argType="string" />
+            app:argType="org.jellyfin.sdk.model.api.BaseItemKind"
+            android:defaultValue="MOVIE" />
         <argument
             android:name="playerItem"
             android:defaultValue="@null"
@@ -163,6 +163,23 @@
             android:id="@+id/action_seasonFragment_to_episodeBottomSheetFragment"
             app:destination="@id/episodeBottomSheetFragment" />
     </fragment>
+    <fragment
+        android:id="@+id/downloadSeriesFragment"
+        android:name="dev.jdtech.jellyfin.fragments.DownloadSeriesFragment"
+        android:label="{seriesName}"
+        tools:layout="@layout/fragment_season">
+        <argument
+            android:name="seriesMetadata"
+            app:argType="dev.jdtech.jellyfin.models.DownloadSeriesMetadata"/>
+        <argument
+            android:name="seriesName"
+            android:defaultValue="Series"
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_downloadSeriesFragment_to_episodeBottomSheetFragment"
+            app:destination="@id/episodeBottomSheetFragment" />
+    </fragment>
     <dialog
         android:id="@+id/episodeBottomSheetFragment"
         android:name="dev.jdtech.jellyfin.fragments.EpisodeBottomSheetFragment"
@@ -207,6 +224,9 @@
         <action
             android:id="@+id/action_downloadFragment_to_mediaInfoFragment"
             app:destination="@id/mediaInfoFragment" />
+        <action
+            android:id="@+id/action_downloadFragment_to_downloadSeriesFragment"
+            app:destination="@id/downloadSeriesFragment" />
     </fragment>
     <fragment
         android:id="@+id/searchResultFragment"
@@ -229,7 +249,7 @@
         android:label="@string/add_server"
         tools:layout="@layout/fragment_add_server">
         <action
-            android:id="@+id/action_addServerFragment3_to_loginFragment2"
+            android:id="@+id/action_addServerFragment_to_loginFragment"
             app:destination="@id/loginFragment" />
     </fragment>
     <fragment
@@ -238,7 +258,7 @@
         android:label="@string/select_server"
         tools:layout="@layout/fragment_server_select">
         <action
-            android:id="@+id/action_serverSelectFragment2_to_addServerFragment3"
+            android:id="@+id/action_serverSelectFragment_to_addServerFragment"
             app:destination="@id/addServerFragment" />
         <action
             android:id="@+id/action_serverSelectFragment_to_homeFragment"
@@ -252,7 +272,7 @@
         android:label="@string/login"
         tools:layout="@layout/fragment_login">
         <action
-            android:id="@+id/action_loginFragment2_to_navigation_home"
+            android:id="@+id/action_loginFragment_to_navigation_home"
             app:destination="@id/homeFragment"
             app:popUpTo="@id/homeFragment"
             app:popUpToInclusive="true" />

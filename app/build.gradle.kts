@@ -16,8 +16,8 @@ android {
         applicationId = "dev.jdtech.jellyfin"
         minSdk = 26
         targetSdk = 32
-        versionCode = 9
-        versionName = "0.4.0"
+        versionCode = 10
+        versionName = "0.5.0"
     }
 
     buildTypes {
@@ -48,10 +48,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
     buildFeatures {
         dataBinding = true
         viewBinding = true
@@ -61,25 +57,25 @@ android {
 dependencies {
     implementation("androidx.leanback:leanback:1.2.0-alpha02")
 
-    implementation("androidx.core:core-ktx:1.7.0")
+    implementation("androidx.core:core-ktx:1.8.0")
     implementation("androidx.core:core-splashscreen:1.0.0-rc01")
-    implementation("androidx.appcompat:appcompat:1.4.1")
+    implementation("androidx.appcompat:appcompat:1.4.2")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
 
     // Material
-    implementation("com.google.android.material:material:1.6.0")
+    implementation("com.google.android.material:material:1.6.1")
 
     // ConstraintLayout
     implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
     // Lifecycle
-    val lifecycleVersion = "2.4.1"
+    val lifecycleVersion = "2.5.0"
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycleVersion")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycleVersion")
 
     // Navigation
-    val navigationVersion = "2.4.2"
+    val navigationVersion = "2.5.0"
     implementation("androidx.navigation:navigation-fragment-ktx:$navigationVersion")
     implementation("androidx.navigation:navigation-ui-ktx:$navigationVersion")
 
@@ -98,7 +94,7 @@ dependencies {
     implementation("androidx.preference:preference-ktx:$preferenceVersion")
 
     // Jellyfin
-    val jellyfinVersion = "1.2.0"
+    val jellyfinVersion = "1.3.1"
     implementation("org.jellyfin.sdk:jellyfin-core:$jellyfinVersion")
 
     // Glide
@@ -112,7 +108,7 @@ dependencies {
     kapt("com.google.dagger:hilt-compiler:$hiltVersion")
 
     // ExoPlayer
-    val exoplayerVersion = "2.17.1"
+    val exoplayerVersion = "2.18.0"
     implementation("com.google.android.exoplayer:exoplayer-core:$exoplayerVersion")
     implementation("com.google.android.exoplayer:exoplayer-ui:$exoplayerVersion")
     implementation(files("libs/extension-ffmpeg-release.aar"))
@@ -124,7 +120,10 @@ dependencies {
     val timberVersion = "5.0.1"
     implementation("com.jakewharton.timber:timber:$timberVersion")
 
-    val aboutLibrariesVersion = "10.2.0"
+    val aboutLibrariesVersion = "10.3.1"
     implementation("com.mikepenz:aboutlibraries-core:$aboutLibrariesVersion")
     implementation("com.mikepenz:aboutlibraries:$aboutLibrariesVersion")
+
+    val pagingVersion = "3.1.1"
+    implementation("androidx.paging:paging-runtime-ktx:$pagingVersion")
 }
