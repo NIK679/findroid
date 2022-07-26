@@ -94,7 +94,7 @@ dependencies {
     implementation("androidx.preference:preference-ktx:$preferenceVersion")
 
     // Jellyfin
-    val jellyfinVersion = "1.3.1"
+    val jellyfinVersion = "1.3.2"
     implementation("org.jellyfin.sdk:jellyfin-core:$jellyfinVersion")
 
     // Glide
@@ -103,12 +103,12 @@ dependencies {
     kapt("com.github.bumptech.glide:compiler:$glideVersion")
 
     // Hilt
-    val hiltVersion = "2.42"
+    val hiltVersion = "2.43"
     implementation("com.google.dagger:hilt-android:$hiltVersion")
     kapt("com.google.dagger:hilt-compiler:$hiltVersion")
 
     // ExoPlayer
-    val exoplayerVersion = "2.18.0"
+    val exoplayerVersion = "2.18.1"
     implementation("com.google.android.exoplayer:exoplayer-core:$exoplayerVersion")
     implementation("com.google.android.exoplayer:exoplayer-ui:$exoplayerVersion")
     implementation(files("libs/extension-ffmpeg-release.aar"))
