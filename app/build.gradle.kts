@@ -16,8 +16,8 @@ android {
         applicationId = "dev.jdtech.jellyfin"
         minSdk = 26
         targetSdk = 32
-        versionCode = 10
-        versionName = "0.5.0"
+        versionCode = 11
+        versionName = "0.6.0"
     }
 
     buildTypes {
@@ -58,7 +58,7 @@ dependencies {
     implementation("androidx.leanback:leanback:1.2.0-alpha02")
 
     implementation("androidx.core:core-ktx:1.8.0")
-    implementation("androidx.appcompat:appcompat:1.4.2")
+    implementation("androidx.appcompat:appcompat:1.5.0")
     implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
 
 
@@ -93,7 +93,7 @@ dependencies {
     implementation("androidx.preference:preference-ktx:$preferenceVersion")
 
     // Jellyfin
-    val jellyfinVersion = "1.3.4"
+    val jellyfinVersion = "1.3.5"
     implementation("org.jellyfin.sdk:jellyfin-core:$jellyfinVersion")
 
     // Glide
@@ -119,7 +119,7 @@ dependencies {
     val timberVersion = "5.0.1"
     implementation("com.jakewharton.timber:timber:$timberVersion")
 
-    val aboutLibrariesVersion = "10.3.1"
+    val aboutLibrariesVersion = "10.4.0"
     implementation("com.mikepenz:aboutlibraries-core:$aboutLibrariesVersion")
     implementation("com.mikepenz:aboutlibraries:$aboutLibrariesVersion")
 

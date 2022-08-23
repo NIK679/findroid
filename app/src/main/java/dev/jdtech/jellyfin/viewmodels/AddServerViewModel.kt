@@ -10,11 +10,9 @@ import dev.jdtech.jellyfin.R
 import dev.jdtech.jellyfin.api.JellyfinApi
 import dev.jdtech.jellyfin.database.Server
 import dev.jdtech.jellyfin.database.ServerDatabaseDao
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import dev.jdtech.jellyfin.models.DiscoveredServer
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.jellyfin.sdk.discovery.RecommendedServerInfo
 import org.jellyfin.sdk.discovery.RecommendedServerInfoScore
 import org.jellyfin.sdk.discovery.RecommendedServerIssue
@@ -35,13 +33,37 @@ constructor(
     val uiState = _uiState.asStateFlow()
     private val _navigateToLogin = MutableSharedFlow<Boolean>()
     val navigateToLogin = _navigateToLogin.asSharedFlow()
+    private val _discoveredServersState = MutableStateFlow<DiscoveredServersState>(DiscoveredServersState.Loading)
+    val discoveredServersState = _discoveredServersState.asStateFlow()
 
+    private val discoveredServers = mutableListOf<DiscoveredServer>()
     private var serverFound = false
 
     sealed class UiState {
         object Normal : UiState()
         object Loading : UiState()
         data class Error(val message: String) : UiState()
+    }
+
+    sealed class DiscoveredServersState {
+        object Loading : DiscoveredServersState()
+        data class Servers(val servers: List<DiscoveredServer>) : DiscoveredServersState()
+    }
+
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val servers = jellyfinApi.jellyfin.discovery.discoverLocalServers()
+            servers.collect { serverDiscoveryInfo ->
+                discoveredServers.add(DiscoveredServer(
+                    serverDiscoveryInfo.id,
+                    serverDiscoveryInfo.name,
+                    serverDiscoveryInfo.address
+                ))
+                _discoveredServersState.emit(
+                    DiscoveredServersState.Servers(discoveredServers)
+                )
+            }
+        }
     }
 
     /**
@@ -68,17 +90,16 @@ constructor(
                     RecommendedServerInfoScore.OK
                 )
 
-                val greatServers = mutableListOf<RecommendedServerInfo>()
                 val goodServers = mutableListOf<RecommendedServerInfo>()
                 val okServers = mutableListOf<RecommendedServerInfo>()
 
                 recommended
                     .onCompletion {
-                        if (serverFound) return@onCompletion
+                        if (serverFound) {
+                            serverFound = false
+                            return@onCompletion
+                        }
                         when {
-                            greatServers.isNotEmpty() -> {
-                                connectToServer(greatServers.first())
-                            }
                             goodServers.isNotEmpty() -> {
                                 val issuesString = createIssuesString(goodServers.first())
                                 Toast.makeText(
@@ -109,6 +130,8 @@ constructor(
                             RecommendedServerInfoScore.BAD -> Unit
                         }
                     }
+            } catch (e: CancellationException) {
+
             } catch (e: Exception) {
                 _uiState.emit(
                     UiState.Error(
