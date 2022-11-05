@@ -57,21 +57,24 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val menuHost: MenuHost = requireActivity()
-        menuHost.addMenuProvider(object : MenuProvider {
-            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
-                menuInflater.inflate(R.menu.home_menu, menu)
-            }
-
-            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
-                return when (menuItem.itemId) {
-                    R.id.action_settings -> {
-                        navigateToSettingsFragment()
-                        true
-                    }
-                    else -> false
+        menuHost.addMenuProvider(
+            object : MenuProvider {
+                override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                    menuInflater.inflate(R.menu.home_menu, menu)
                 }
-            }
-        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
+
+                override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                    return when (menuItem.itemId) {
+                        R.id.action_settings -> {
+                            navigateToSettingsFragment()
+                            true
+                        }
+                        else -> false
+                    }
+                }
+            },
+            viewLifecycleOwner, Lifecycle.State.RESUMED
+        )
     }
 
     override fun onResume() {
@@ -97,14 +100,15 @@ class HomeFragment : Fragment() {
                     else -> Toast.makeText(requireContext(), R.string.unknown_error, LENGTH_LONG)
                         .show()
                 }
-            })
+            }
+        )
 
         binding.errorLayout.errorRetryButton.setOnClickListener {
             viewModel.loadData()
         }
 
         binding.errorLayout.errorDetailsButton.setOnClickListener {
-            errorDialog.show(parentFragmentManager, "errordialog")
+            errorDialog.show(parentFragmentManager, ErrorDialogFragment.TAG)
         }
     }
 
@@ -139,7 +143,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun bindUiStateError(uiState: HomeViewModel.UiState.Error) {
-        errorDialog = ErrorDialogFragment(uiState.error)
+        errorDialog = ErrorDialogFragment.newInstance(uiState.error)
         binding.loadingIndicator.isVisible = false
         binding.refreshLayout.isRefreshing = false
         binding.viewsRecyclerView.isVisible = false

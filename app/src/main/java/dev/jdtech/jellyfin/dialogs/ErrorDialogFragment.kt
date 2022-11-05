@@ -6,12 +6,13 @@ import android.os.Bundle
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dev.jdtech.jellyfin.R
+import dev.jdtech.jellyfin.utils.serializable
+import java.io.Serializable
 import java.lang.IllegalStateException
 
-class ErrorDialogFragment(
-    private val error: Exception
-    ) : DialogFragment() {
+class ErrorDialogFragment: DialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val error = requireArguments().serializable<Exception>("error")!!
         return activity?.let {
             val builder = MaterialAlertDialogBuilder(it, R.style.ErrorDialogStyle)
             builder
@@ -28,9 +29,20 @@ class ErrorDialogFragment(
 
                     val shareIntent = Intent.createChooser(sendIntent, null)
                     startActivity(shareIntent)
-
                 }
             builder.create()
         } ?: throw IllegalStateException("Activity cannot be null")
+    }
+
+    companion object {
+        const val TAG = "error_dialog"
+
+        fun newInstance(error: Exception): ErrorDialogFragment {
+            val errorDialogFragment = ErrorDialogFragment()
+            val args = Bundle()
+            args.putSerializable("error", error as Serializable)
+            errorDialogFragment.arguments = args
+            return errorDialogFragment
+        }
     }
 }
