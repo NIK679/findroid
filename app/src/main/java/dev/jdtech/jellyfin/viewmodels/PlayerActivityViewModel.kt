@@ -13,6 +13,7 @@ import com.google.android.exoplayer2.DefaultRenderersFactory
 import com.google.android.exoplayer2.ExoPlayer
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.Player
+import com.google.android.exoplayer2.audio.AudioAttributes
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.jdtech.jellyfin.database.DownloadDatabaseDao
@@ -65,19 +66,10 @@ constructor(
     private val sp = PreferenceManager.getDefaultSharedPreferences(application)
 
     init {
-        val useMpv = sp.getBoolean("mpv_player", false)
-        val preferredAudioLanguage = sp.getString("audio_language", "")!!
-        val preferredSubtitleLanguage = sp.getString("subtitle_language", "")!!
-
-        if (useMpv) {
-            val preferredLanguages = mapOf(
-                TrackType.AUDIO to preferredAudioLanguage,
-                TrackType.SUBTITLE to preferredSubtitleLanguage
-            )
+        if (appPreferences.playerMpv) {
             player = MPVPlayer(
                 application,
                 false,
-                preferredLanguages,
                 appPreferences
             )
         } else {
@@ -88,11 +80,18 @@ constructor(
             trackSelector.setParameters(
                 trackSelector.buildUponParameters()
                     .setTunnelingEnabled(true)
-                    .setPreferredAudioLanguage(preferredAudioLanguage)
-                    .setPreferredTextLanguage(preferredSubtitleLanguage)
+                    .setPreferredAudioLanguage(appPreferences.preferredAudioLanguage)
+                    .setPreferredTextLanguage(appPreferences.preferredSubtitleLanguage)
             )
             player = ExoPlayer.Builder(application, renderersFactory)
                 .setTrackSelector(trackSelector)
+                .setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(C.AUDIO_CONTENT_TYPE_MOVIE)
+                        .setUsage(C.USAGE_MEDIA)
+                        .build(),
+                    /* handleAudioFocus = */ true
+                )
                 .setSeekBackIncrementMs(appPreferences.playerSeekBackIncrement)
                 .setSeekForwardIncrementMs(appPreferences.playerSeekForwardIncrement)
                 .build()

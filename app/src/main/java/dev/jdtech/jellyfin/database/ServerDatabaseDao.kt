@@ -11,6 +11,7 @@ import dev.jdtech.jellyfin.models.Server
 import dev.jdtech.jellyfin.models.ServerAddress
 import dev.jdtech.jellyfin.models.ServerWithAddresses
 import dev.jdtech.jellyfin.models.ServerWithAddressesAndUsers
+import dev.jdtech.jellyfin.models.ServerWithUsers
 import dev.jdtech.jellyfin.models.User
 import java.util.UUID
 
@@ -40,7 +41,7 @@ interface ServerDatabaseDao {
 
     @Transaction
     @Query("select * from servers where id = :id")
-    fun getServerWithUsers(id: String): ServerWithAddresses
+    fun getServerWithUsers(id: String): ServerWithUsers
 
     @Transaction
     @Query("select * from servers where id = :id")
@@ -60,4 +61,19 @@ interface ServerDatabaseDao {
 
     @Query("delete from servers where id = :id")
     fun delete(id: String)
+
+    @Query("delete from users where id = :id")
+    fun deleteUser(id: UUID)
+
+    @Query("delete from serverAddresses where id = :id")
+    fun deleteServerAddress(id: UUID)
+
+    @Query("update servers set currentUserId = :userId where id = :serverId")
+    fun updateServerCurrentUser(serverId: String, userId: UUID)
+
+    @Query("select * from users where id = (select currentUserId from servers where id = :serverId)")
+    fun getServerCurrentUser(serverId: String): User?
+
+    @Query("select * from serverAddresses where id = (select currentServerAddressId from servers where id = :serverId)")
+    fun getServerCurrentAddress(serverId: String): ServerAddress?
 }

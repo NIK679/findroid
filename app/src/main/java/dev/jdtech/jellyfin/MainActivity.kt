@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.NavController
 import androidx.navigation.NavGraph
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.AppBarConfiguration
@@ -16,6 +17,7 @@ import com.google.android.material.navigation.NavigationBarView
 import dagger.hilt.android.AndroidEntryPoint
 import dev.jdtech.jellyfin.database.ServerDatabaseDao
 import dev.jdtech.jellyfin.databinding.ActivityMainBinding
+import dev.jdtech.jellyfin.utils.AppPreferences
 import dev.jdtech.jellyfin.utils.loadDownloadLocation
 import dev.jdtech.jellyfin.viewmodels.MainViewModel
 import javax.inject.Inject
@@ -31,6 +33,11 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var database: ServerDatabaseDao
 
+    @Inject
+    lateinit var appPreferences: AppPreferences
+
+    lateinit var navController: NavController
+
     @OptIn(NavigationUiSaveStateControl::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,19 +49,23 @@ class MainActivity : AppCompatActivity() {
 
         val navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment_activity_main) as NavHostFragment
-        val navController = navHostFragment.navController
+        navController = navHostFragment.navController
         val inflater = navController.navInflater
         val graph = inflater.inflate(R.navigation.app_navigation)
 
         if (uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION) {
             graph.setStartDestination(R.id.homeFragmentTv)
             checkServersEmpty(graph)
+            checkUser(graph)
             if (!viewModel.startDestinationTvChanged) {
                 viewModel.startDestinationTvChanged = true
                 navController.setGraph(graph, intent.extras)
             }
         } else {
             checkServersEmpty(graph) {
+                navController.setGraph(graph, intent.extras)
+            }
+            checkUser(graph) {
                 navController.setGraph(graph, intent.extras)
             }
         }
@@ -82,7 +93,7 @@ class MainActivity : AppCompatActivity() {
 
             navController.addOnDestinationChangedListener { _, destination, _ ->
                 binding.navView!!.visibility = when (destination.id) {
-                    R.id.twoPaneSettingsFragment, R.id.serverSelectFragment, R.id.addServerFragment, R.id.loginFragment, R.id.about_libraries_dest -> View.GONE
+                    R.id.twoPaneSettingsFragment, R.id.serverSelectFragment, R.id.addServerFragment, R.id.loginFragment, R.id.about_libraries_dest, R.id.usersFragment, R.id.serverAddressesFragment -> View.GONE
                     else -> View.VISIBLE
                 }
                 if (destination.id == R.id.about_libraries_dest) binding.mainToolbar?.title =
@@ -94,8 +105,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        onBackPressed()
-        return true
+        return navController.navigateUp()
     }
 
     private fun checkServersEmpty(graph: NavGraph, onServersEmpty: () -> Unit = {}) {
@@ -106,6 +116,20 @@ class MainActivity : AppCompatActivity() {
                 viewModel.startDestinationChanged = true
                 onServersEmpty()
             }
+        }
+    }
+
+    private fun checkUser(graph: NavGraph, onNoUser: () -> Unit = {}) {
+        if (!viewModel.startDestinationChanged) {
+            appPreferences.currentServer?.let {
+                val currentUser = database.getServerCurrentUser(it)
+                if (currentUser == null) {
+                    graph.setStartDestination(R.id.loginFragment)
+                    viewModel.startDestinationChanged = true
+                    onNoUser()
+                }
+            }
+
         }
     }
 }

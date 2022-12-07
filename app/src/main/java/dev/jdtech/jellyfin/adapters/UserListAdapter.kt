@@ -5,13 +5,14 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import dev.jdtech.jellyfin.databinding.UserItemBinding
+import dev.jdtech.jellyfin.databinding.UserListItemBinding
 import dev.jdtech.jellyfin.models.User
 
 class UserListAdapter(
-    private val clickListener: (user: User) -> Unit
+    private val clickListener: (user: User) -> Unit,
+    private val longClickListener: (user: User) -> Boolean
 ) : ListAdapter<User, UserListAdapter.UserViewHolder>(DiffCallback) {
-    class UserViewHolder(private var binding: UserItemBinding) :
+    class UserViewHolder(private var binding: UserListItemBinding) :
         RecyclerView.ViewHolder(binding.root) {
         fun bind(user: User) {
             binding.user = user
@@ -34,7 +35,7 @@ class UserListAdapter(
         viewType: Int
     ): UserViewHolder {
         return UserViewHolder(
-            UserItemBinding.inflate(
+            UserListItemBinding.inflate(
                 LayoutInflater.from(parent.context),
                 parent,
                 false
@@ -45,6 +46,7 @@ class UserListAdapter(
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
         val user = getItem(position)
         holder.itemView.setOnClickListener { clickListener(user) }
+        holder.itemView.setOnLongClickListener { longClickListener(user) }
         holder.bind(user)
     }
 }

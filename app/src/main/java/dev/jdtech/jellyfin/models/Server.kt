@@ -9,6 +9,6 @@ data class Server(
     @PrimaryKey
     val id: String,
     val name: String,
-    val currentServerAddressId: UUID?,
-    val currentUserId: UUID?,
+    var currentServerAddressId: UUID?,
+    var currentUserId: UUID?,
 )
