@@ -13,11 +13,11 @@ plugins {
 android {
     namespace = "dev.jdtech.jellyfin"
     compileSdk = 33
-    buildToolsVersion = "33.0.0"
+    buildToolsVersion = "33.0.1"
 
     defaultConfig {
         applicationId = "dev.jdtech.jellyfin"
-        minSdk = 26
+        minSdk = 27
         targetSdk = 33
         versionCode = 13
         versionName = "0.7.0"
@@ -76,6 +76,9 @@ dependencies {
     implementation(libs.androidx.leanback)
     implementation(libs.androidx.lifecycle.runtime)
     implementation(libs.androidx.lifecycle.viewmodel)
+    implementation(libs.androidx.media3.exoplayer)
+    implementation(libs.androidx.media3.ui)
+    implementation(libs.androidx.media3.session)
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.paging)
@@ -86,8 +89,6 @@ dependencies {
     kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.swiperefreshlayout)
-    implementation(libs.exoplayer.core)
-    implementation(libs.exoplayer.ui)
     implementation(libs.glide)
     kapt(libs.glide.compiler)
     implementation(libs.hilt.android)
@@ -96,9 +97,9 @@ dependencies {
     implementation(libs.material)
     implementation(libs.timber)
 
-    // ExoPlayer FFmpeg extension
-    implementation(files("libs/extension-ffmpeg-release.aar"))
-
     // MPV
     implementation(files("libs/libmpv.aar"))
+
+    // Media3 FFmpeg decoder
+    implementation(files("libs/lib-decoder-ffmpeg-release.aar"))
 }
