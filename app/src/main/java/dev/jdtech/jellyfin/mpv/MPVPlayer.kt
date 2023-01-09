@@ -12,8 +12,6 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.TextureView
 import androidx.core.content.getSystemService
-import dev.jdtech.jellyfin.utils.AppPreferences
-import `is`.xyz.mpv.MPVLib
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.BasePlayer
 import androidx.media3.common.C
@@ -37,6 +35,8 @@ import androidx.media3.common.util.ListenerSet
 import androidx.media3.common.util.Size
 import androidx.media3.common.util.Util
 import androidx.media3.exoplayer.ExoPlaybackException
+import dev.jdtech.jellyfin.utils.AppPreferences
+import dev.jdtech.mpv.MPVLib
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.CopyOnWriteArraySet
@@ -111,7 +111,6 @@ class MPVPlayer(
         MPVLib.setOptionString("vd-lavc-dr", "no")
 
         MPVLib.init()
-
 
         companionPrefs = appPreferences
 
@@ -366,13 +365,13 @@ class MPVPlayer(
      * @return true if the track is or was already selected
      */
     fun selectTrack(
-        @TrackType trackType: String,
+        trackType: TrackType,
         id: Int
     ) {
         if (id != C.INDEX_UNSET) {
-            MPVLib.setPropertyInt(trackType, id)
+            MPVLib.setPropertyInt(trackType.type, id)
         } else {
-            MPVLib.setPropertyString(trackType, "no")
+            MPVLib.setPropertyString(trackType.type, "no")
         }
     }
 
@@ -1311,12 +1310,11 @@ class MPVPlayer(
         @Parcelize
         data class Track(
             val id: Int,
-            @TrackType val type: String,
+            val type: TrackType,
             val mimeType: String = when (type) {
                 TrackType.VIDEO -> MimeTypes.BASE_TYPE_VIDEO
                 TrackType.AUDIO -> MimeTypes.BASE_TYPE_AUDIO
                 TrackType.SUBTITLE -> MimeTypes.BASE_TYPE_TEXT
-                else -> ""
             },
             val title: String,
             val lang: String,
@@ -1343,7 +1341,7 @@ class MPVPlayer(
                 fun fromJSON(json: JSONObject): Track {
                     return Track(
                         id = json.optInt("id"),
-                        type = json.optString("type"),
+                        type = TrackType.values().first { it.type == json.optString("type") },
                         title = json.optString("title"),
                         lang = json.optString("lang"),
                         external = json.getBoolean("external"),
@@ -1412,7 +1410,6 @@ class MPVPlayer(
                                 indexCurrentText = trackListText.indexOf(currentFormat)
                             }
                         }
-                        else -> continue
                     }
                 }
                 if (trackListText.size == 1 && trackListText[0].id == emptyTrack.id.toString()) {
