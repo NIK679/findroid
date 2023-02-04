@@ -9,6 +9,9 @@ on:
     branches: [ testing2 ]
   pull_request:
     branches: [ testing2 ]
+  workflow_run:
+    workflows: [Sync Fork]
+    types: [completed]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,6 +20,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       
       - name: Checkout code
@@ -50,22 +54,24 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
       
-      - name: Get current date
-        id: date
-        run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+      - name: Set tag
+        id: tag
+        run: echo "tag=$(git rev-parse --short HEAD^)-$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
         
-      - name: Rename APK
-        id: rename
-        run: mv app/phone/build/outputs/apk/release/phone-arm64-v8a-release-unsigned-signed.apk app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.date.outputs.date }}.apk ; mv app/phone/build/outputs/apk/debug/phone-arm64-v8a-debug-signed.apk app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.date.outputs.date }}.apk
+      - name: Rename Release APK
+        run: mv app/phone/build/outputs/apk/release/phone-arm64-v8a-release-unsigned-signed.apk app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+
+      - name: Rename Debug APK
+        run: mv app/phone/build/outputs/apk/debug/phone-arm64-v8a-debug-signed.apk app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
        
       - name: Publish Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: testing-${{ steps.date.outputs.date }}
+          automatic_release_tag: testing-${{ steps.tag.outputs.tag }}
           prerelease: true
           title: "Testing Build"
           files: |
-            app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.date.outputs.date }}.apk
-            app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.date.outputs.date }}.apk
+            app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+            app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
  
