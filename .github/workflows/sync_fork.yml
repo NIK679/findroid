@@ -1,0 +1,75 @@
+name: Sync Fork
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # on button click
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: tgymnich/fork-sync@v1.8
+        with:
+          owner: jarnedemeulemeester
+          base: testing
+          head: main
+          merge_method: rebase
+  build:
+    needs: sync
+    runs-on: ubuntu-latest
+    steps:
+      
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Generate Release APK
+        run: ./gradlew assembleRelease      
+      
+      - name: Generate Debug APK
+        run: ./gradlew assembleDebug
+      
+      - name: Sign Release APK
+        uses: r0adkll/sign-android-release@v1
+        # ID used to access action output
+        id: sign_app_release
+        with:
+          releaseDirectory: app/phone/build/outputs/apk/release
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+          
+      - name: Sign Debug APK
+        uses: r0adkll/sign-android-release@v1
+        # ID used to access action output
+        id: sign_app_debug
+        with:
+          releaseDirectory: app/phone/build/outputs/apk/debug
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+      
+      - name: Set tag
+        id: tag
+        run: echo "tag=$(git rev-parse --short HEAD)-$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+        
+      - name: Rename Release APK
+        run: mv app/phone/build/outputs/apk/release/phone-arm64-v8a-release-unsigned-signed.apk app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+
+      - name: Rename Debug APK
+        run: mv app/phone/build/outputs/apk/debug/phone-arm64-v8a-debug-signed.apk app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+       
+      - name: Publish Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: testing-${{ steps.tag.outputs.tag }}
+          prerelease: true
+          title: "Testing Build"
+          files: |
+            app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+            app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+ 
+
