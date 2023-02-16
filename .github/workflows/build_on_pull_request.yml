@@ -26,7 +26,7 @@ jobs:
         run: ./gradlew assembleDebug
       
       - name: Sign Release APK
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v1
         # ID used to access action output
         id: sign_app_release
         with:
@@ -37,7 +37,7 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           
       - name: Sign Debug APK
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v1
         # ID used to access action output
         id: sign_app_debug
         with:
