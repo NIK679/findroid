@@ -14,7 +14,7 @@ jobs:
     steps:
       
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       
       - name: Generate Release APK
         run: ./gradlew assembleRelease      
@@ -46,22 +46,31 @@ jobs:
       
       - name: Set tag
         id: tag
-        run: echo "tag=$(date +'%F_%H-%M-%S')-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: echo "tag=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         
       - name: Rename Release APK
-        run: mv app/phone/build/outputs/apk/release/phone-arm64-v8a-release-unsigned-signed.apk app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+        working-directory: app/phone/build/outputs/apk/release/
+        run: mv phone-arm64-v8a-release-unsigned-signed.apk testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
 
       - name: Rename Debug APK
-        run: mv app/phone/build/outputs/apk/debug/phone-arm64-v8a-debug-signed.apk app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+        working-directory: app/phone/build/outputs/apk/debug/
+        run: mv phone-arm64-v8a-debug-signed.apk testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+
+      - name: Upload app
+        uses: actions/upload-artifact@v3
+        with:
+          name: findroid-apk
+          path: |
+            app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+            app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
        
       - name: Publish Release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: marvinpinto/action-automatic-releases@latest
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: testing-${{ steps.tag.outputs.tag }}
+          automatic_release_tag: {{ steps.tag.outputs.tag }}
           prerelease: true
           title: "Testing Build"
           files: |
             app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
             app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
- 
