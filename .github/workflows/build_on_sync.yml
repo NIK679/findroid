@@ -69,7 +69,7 @@ jobs:
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           automatic_release_tag: ${{ steps.tag.outputs.tag }}
-          prerelease: true
+          prerelease: false
           title: "Testing Build"
           files: |
             app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
