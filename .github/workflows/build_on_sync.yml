@@ -33,7 +33,7 @@ jobs:
         # ID used to access action output
         id: sign_app_release
         with:
-          releaseDirectory: app/phone/build/outputs/apk/release
+          releaseDirectory: app/phone/build/outputs/apk/libre/release
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
@@ -44,7 +44,7 @@ jobs:
         # ID used to access action output
         id: sign_app_debug
         with:
-          releaseDirectory: app/phone/build/outputs/apk/debug
+          releaseDirectory: app/phone/build/outputs/apk/libre/debug
           signingKeyBase64: ${{ secrets.SIGNING_KEY }}
           alias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
@@ -55,20 +55,20 @@ jobs:
         run: echo "tag=$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
         
       - name: Rename Release APK
-        working-directory: app/phone/build/outputs/apk/release/
-        run: mv phone-arm64-v8a-release-unsigned-signed.apk testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+        working-directory: app/phone/build/outputs/apk/libre/release/
+        run: mv phone-libre-arm64-v8a-release-unsigned-signed.apk testing-release-libre-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
 
       - name: Rename Debug APK
-        working-directory: app/phone/build/outputs/apk/debug/
-        run: mv phone-arm64-v8a-debug-signed.apk testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+        working-directory: app/phone/build/outputs/apk/libre/debug/
+        run: mv phone-libre-arm64-v8a-debug-signed.apk testing-debug-libre-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
 
       - name: Upload app
         uses: actions/upload-artifact@v3
         with:
           name: findroid-apk
           path: |
-            app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
-            app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+            app/phone/build/outputs/apk/libre/release/testing-release-libre-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+            app/phone/build/outputs/apk/libre/debug/testing-debug-libre-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
        
       - name: Publish Release
         uses: marvinpinto/action-automatic-releases@latest
@@ -78,5 +78,5 @@ jobs:
           prerelease: false
           title: "Testing Build"
           files: |
-            app/phone/build/outputs/apk/release/testing-release-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
-            app/phone/build/outputs/apk/debug/testing-debug-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+            app/phone/build/outputs/apk/libre/release/testing-release-libre-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
+            app/phone/build/outputs/apk/libre/debug/testing-debug-libre-arm64-v8a-${{ steps.tag.outputs.tag }}.apk
