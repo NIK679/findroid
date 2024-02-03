@@ -29,24 +29,24 @@ jobs:
         run: ./gradlew assembleDebug
       
       - name: Sign Release APK
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v1
         # ID used to access action output
         id: sign_app_release
         with:
-          releaseDirectory: app/phone/build/outputs/apk/libre/release
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
+          releaseDir: app/phone/build/outputs/apk/libre/release
+          signingKey: ${{ secrets.SIGNING_KEY }}
+          keyAlias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           
       - name: Sign Debug APK
-        uses: r0adkll/sign-android-release@v1
+        uses: ilharp/sign-android-release@v1
         # ID used to access action output
         id: sign_app_debug
         with:
-          releaseDirectory: app/phone/build/outputs/apk/libre/debug
-          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
-          alias: ${{ secrets.ALIAS }}
+          releaseDir: app/phone/build/outputs/apk/libre/debug
+          signingKey: ${{ secrets.SIGNING_KEY }}
+          keyAlias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
       
