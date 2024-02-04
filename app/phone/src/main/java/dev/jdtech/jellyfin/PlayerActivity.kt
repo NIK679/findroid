@@ -12,6 +12,7 @@ import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
+import android.provider.Settings
 import android.util.Rational
 import android.view.View
 import android.view.WindowManager
@@ -27,18 +28,13 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.C
-import androidx.media3.exoplayer.ExoPlayer
-import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.DefaultTimeBar
 import androidx.media3.ui.PlayerView
-import androidx.media3.ui.TrackSelectionDialogBuilder
 import androidx.navigation.navArgs
 import dagger.hilt.android.AndroidEntryPoint
 import dev.jdtech.jellyfin.databinding.ActivityPlayerBinding
 import dev.jdtech.jellyfin.dialogs.SpeedSelectionDialogFragment
 import dev.jdtech.jellyfin.dialogs.TrackSelectionDialogFragment
-import dev.jdtech.jellyfin.mpv.MPVPlayer
-import dev.jdtech.jellyfin.mpv.TrackType
 import dev.jdtech.jellyfin.utils.PlayerGestureHelper
 import dev.jdtech.jellyfin.utils.PreviewScrubListener
 import dev.jdtech.jellyfin.viewmodels.PlayerActivityViewModel
@@ -46,7 +42,6 @@ import dev.jdtech.jellyfin.viewmodels.PlayerEvents
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
-import dev.jdtech.jellyfin.player.video.R as PlayerVideoR
 
 var isControlsLocked: Boolean = false
 
@@ -60,6 +55,7 @@ class PlayerActivity : BasePlayerActivity() {
     private var playerGestureHelper: PlayerGestureHelper? = null
     override val viewModel: PlayerActivityViewModel by viewModels()
     private var previewScrubListener: PreviewScrubListener? = null
+    private var wasZoom: Boolean = false
 
     private val isPipSupported by lazy {
         // Check if device has PiP feature
@@ -116,10 +112,6 @@ class PlayerActivity : BasePlayerActivity() {
             finish()
         }
 
-        binding.playerView.findViewById<View>(R.id.back_button_alt).setOnClickListener {
-            finish()
-        }
-
         val videoNameTextView = binding.playerView.findViewById<TextView>(R.id.video_name)
 
         val audioButton = binding.playerView.findViewById<ImageButton>(R.id.btn_audio_track)
@@ -173,6 +165,11 @@ class PlayerActivity : BasePlayerActivity() {
                     viewModel.eventsChannelFlow.collect { event ->
                         when (event) {
                             is PlayerEvents.NavigateBack -> finish()
+                            is PlayerEvents.IsPlayingChanged -> {
+                                if (appPreferences.playerPipGesture) {
+                                    setPictureInPictureParams(pipParams(event.isPlaying))
+                                }
+                            }
                         }
                     }
                 }
@@ -201,36 +198,10 @@ class PlayerActivity : BasePlayerActivity() {
         }
 
         audioButton.setOnClickListener {
-            when (viewModel.player) {
-                is MPVPlayer -> {
-                    TrackSelectionDialogFragment(TrackType.AUDIO, viewModel).show(
-                        supportFragmentManager,
-                        "trackselectiondialog",
-                    )
-                }
-                is ExoPlayer -> {
-                    val mappedTrackInfo =
-                        viewModel.trackSelector.currentMappedTrackInfo ?: return@setOnClickListener
-
-                    var audioRenderer: Int? = null
-                    for (i in 0 until mappedTrackInfo.rendererCount) {
-                        if (isRendererType(mappedTrackInfo, i, C.TRACK_TYPE_AUDIO)) {
-                            audioRenderer = i
-                        }
-                    }
-
-                    if (audioRenderer == null) return@setOnClickListener
-
-                    val trackSelectionDialogBuilder = TrackSelectionDialogBuilder(
-                        this,
-                        resources.getString(PlayerVideoR.string.select_audio_track),
-                        viewModel.player,
-                        C.TRACK_TYPE_AUDIO,
-                    )
-                    val trackSelectionDialog = trackSelectionDialogBuilder.build()
-                    trackSelectionDialog.show()
-                }
-            }
+            TrackSelectionDialogFragment(C.TRACK_TYPE_AUDIO, viewModel).show(
+                supportFragmentManager,
+                "trackselectiondialog",
+            )
         }
 
         val exoPlayerControlView = findViewById<FrameLayout>(R.id.player_controls)
@@ -251,38 +222,10 @@ class PlayerActivity : BasePlayerActivity() {
         }
 
         subtitleButton.setOnClickListener {
-            when (viewModel.player) {
-                is MPVPlayer -> {
-                    TrackSelectionDialogFragment(TrackType.SUBTITLE, viewModel).show(
-                        supportFragmentManager,
-                        "trackselectiondialog",
-                    )
-                }
-                is ExoPlayer -> {
-                    val mappedTrackInfo =
-                        viewModel.trackSelector.currentMappedTrackInfo ?: return@setOnClickListener
-
-                    var subtitleRenderer: Int? = null
-                    for (i in 0 until mappedTrackInfo.rendererCount) {
-                        if (isRendererType(mappedTrackInfo, i, C.TRACK_TYPE_TEXT)) {
-                            subtitleRenderer = i
-                        }
-                    }
-
-                    if (subtitleRenderer == null) return@setOnClickListener
-
-                    val trackSelectionDialogBuilder = TrackSelectionDialogBuilder(
-                        this,
-                        resources.getString(PlayerVideoR.string.select_subtile_track),
-                        viewModel.player,
-                        C.TRACK_TYPE_TEXT,
-                    )
-                    trackSelectionDialogBuilder.setShowDisableOption(true)
-
-                    val trackSelectionDialog = trackSelectionDialogBuilder.build()
-                    trackSelectionDialog.show()
-                }
-            }
+            TrackSelectionDialogFragment(C.TRACK_TYPE_TEXT, viewModel).show(
+                supportFragmentManager,
+                "trackselectiondialog",
+            )
         }
 
         speedButton.setOnClickListener {
@@ -321,12 +264,16 @@ class PlayerActivity : BasePlayerActivity() {
     }
 
     override fun onUserLeaveHint() {
-        if (appPreferences.playerPipGesture && viewModel.player.isPlaying && !isControlsLocked) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
+            appPreferences.playerPipGesture &&
+            viewModel.player.isPlaying &&
+            !isControlsLocked
+        ) {
             pictureInPicture()
         }
     }
 
-    private fun pipParams(): PictureInPictureParams {
+    private fun pipParams(enableAutoEnter: Boolean = viewModel.player.isPlaying): PictureInPictureParams {
         val displayAspectRatio = Rational(binding.playerView.width, binding.playerView.height)
 
         val aspectRatio = binding.playerView.player?.videoSize?.let {
@@ -354,23 +301,20 @@ class PlayerActivity : BasePlayerActivity() {
             )
         }
 
-        return PictureInPictureParams.Builder()
+        val builder = PictureInPictureParams.Builder()
             .setAspectRatio(aspectRatio)
             .setSourceRectHint(sourceRectHint)
-            .build()
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setAutoEnterEnabled(enableAutoEnter)
+        }
+
+        return builder.build()
     }
 
     private fun pictureInPicture() {
         if (!isPipSupported) {
             return
-        }
-        binding.playerView.useController = false
-        binding.playerView.findViewById<Button>(R.id.btn_skip_intro).isVisible = false
-
-        if (binding.playerView.player is MPVPlayer) {
-            (binding.playerView.player as MPVPlayer).updateZoomMode(false)
-        } else {
-            binding.playerView.resizeMode = AspectRatioFrameLayout.RESIZE_MODE_FIT
         }
 
         try {
@@ -383,8 +327,35 @@ class PlayerActivity : BasePlayerActivity() {
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        if (!isInPictureInPictureMode) {
-            binding.playerView.useController = true
+        when (isInPictureInPictureMode) {
+            true -> {
+                binding.playerView.useController = false
+                binding.playerView.findViewById<Button>(R.id.btn_skip_intro).isVisible = false
+
+                wasZoom = playerGestureHelper?.isZoomEnabled ?: false
+                playerGestureHelper?.updateZoomMode(false)
+
+                // Brightness mode Auto
+                window.attributes = window.attributes.apply {
+                    screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+                }
+            }
+            false -> {
+                binding.playerView.useController = true
+                playerGestureHelper?.updateZoomMode(wasZoom)
+
+                // Override auto brightness
+                window.attributes = window.attributes.apply {
+                    screenBrightness = if (appPreferences.playerBrightnessRemember) {
+                        appPreferences.playerBrightness
+                    } else {
+                        Settings.System.getInt(
+                            contentResolver,
+                            Settings.System.SCREEN_BRIGHTNESS,
+                        ).toFloat() / 255
+                    }
+                }
+            }
         }
     }
 }

@@ -36,6 +36,14 @@ android {
         sourceCompatibility = Versions.java
         targetCompatibility = Versions.java
     }
+
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = Versions.composeCompiler
+    }
 }
 
 ktlint {
@@ -45,11 +53,12 @@ ktlint {
 }
 
 dependencies {
-    implementation(project(":data"))
-    implementation(project(":preferences"))
-    implementation(project(":player:core"))
+    implementation(projects.data)
+    implementation(projects.preferences)
+    implementation(projects.player.core)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.core)
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler)

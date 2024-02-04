@@ -11,22 +11,15 @@
             app:summary="@string/mpv_player_summary"
             app:title="@string/mpv_player" />
         <ListPreference
-            app:defaultValue="mediacodec-copy"
+            app:defaultValue="mediacodec"
             app:dependency="pref_player_mpv"
             app:entries="@array/mpv_hwdec"
             app:entryValues="@array/mpv_hwdec"
             app:key="pref_player_mpv_hwdec"
             app:title="@string/pref_player_mpv_hwdec"
             app:useSimpleSummaryProvider="true" />
-        <MultiSelectListPreference
-            app:defaultValue="@array/mpv_hwdec_codecs"
-            app:dependency="pref_player_mpv"
-            app:entries="@array/mpv_hwdec_codecs"
-            app:entryValues="@array/mpv_hwdec_codecs"
-            app:key="pref_player_mpv_hwdec_codecs"
-            app:title="@string/pref_player_mpv_hwdec_codecs" />
         <ListPreference
-            app:defaultValue="gpu"
+            app:defaultValue="gpu-next"
             app:dependency="pref_player_mpv"
             app:entries="@array/mpv_vos"
             app:entryValues="@array/mpv_vos"
@@ -40,14 +33,6 @@
             app:entryValues="@array/mpv_aos"
             app:key="pref_player_mpv_ao"
             app:title="@string/pref_player_mpv_ao"
-            app:useSimpleSummaryProvider="true" />
-        <ListPreference
-            app:defaultValue="opengl"
-            app:dependency="pref_player_mpv"
-            app:entries="@array/mpv_gpu_api"
-            app:entryValues="@array/mpv_gpu_api"
-            app:key="pref_player_mpv_gpu_api"
-            app:title="@string/pref_player_mpv_gpu_api"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
@@ -78,6 +63,11 @@
             app:dependency="pref_player_gestures_vb"
             app:key="pref_player_brightness_remember"
             app:title="@string/player_brightness_remember" />
+        <SwitchPreferenceCompat
+            app:dependency="pref_player_gestures_zoom"
+            app:key="pref_player_start_maximized"
+            app:summary="@string/player_start_maximized_summary"
+            app:title="@string/player_start_maximized" />
     </PreferenceCategory>
 
     <PreferenceCategory app:title="@string/seeking">

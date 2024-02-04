@@ -37,7 +37,7 @@ class PlayerGestureHelper(
      * Tracks whether video content should fill the screen, cutting off unwanted content on the sides.
      * Useful on wide-screen phones to remove black bars from some movies.
      */
-    private var isZoomEnabled = false
+    var isZoomEnabled = false
 
     /**
      * Tracks a value during a swipe gesture (between multiple onScroll calls).
@@ -55,8 +55,13 @@ class PlayerGestureHelper(
 
     private var lastScaleEvent: Long = 0
 
+    private var playbackSpeedIncrease: Float = 2f
+    private var lastPlaybackSpeed: Float = 0f
+
     private val screenWidth = Resources.getSystem().displayMetrics.widthPixels
     private val screenHeight = Resources.getSystem().displayMetrics.heightPixels
+
+    private var currentNumberOfPointers: Int = 0
 
     private val tapGestureDetector = GestureDetector(
         playerView.context,
@@ -67,6 +72,24 @@ class PlayerGestureHelper(
                 }
 
                 return true
+            }
+
+            @SuppressLint("SetTextI18n")
+            override fun onLongPress(e: MotionEvent) {
+                // Disables long press gesture if view is locked
+                if (isControlsLocked) return
+
+                // Stop long press gesture when more than 1 pointer
+                if (currentNumberOfPointers > 1) return
+
+                playerView.player?.let {
+                    if (it.isPlaying) {
+                        lastPlaybackSpeed = it.playbackParameters.speed
+                        it.setPlaybackSpeed(playbackSpeedIncrease)
+                        activity.binding.gestureSpeedText.text = playbackSpeedIncrease.toString() + "x"
+                        activity.binding.gestureSpeedLayout.visibility = View.VISIBLE
+                    }
+                }
             }
 
             override fun onDoubleTap(e: MotionEvent): Boolean {
@@ -315,8 +338,8 @@ class PlayerGestureHelper(
                 lastScaleEvent = SystemClock.elapsedRealtime()
                 val scaleFactor = detector.scaleFactor
                 if (abs(scaleFactor - Constants.ZOOM_SCALE_BASE) > Constants.ZOOM_SCALE_THRESHOLD) {
-                    isZoomEnabled = scaleFactor > 1
-                    updateZoomMode(isZoomEnabled)
+                    val enableZoom = scaleFactor > 1
+                    updateZoomMode(enableZoom)
                 }
                 return true
             }
@@ -325,16 +348,17 @@ class PlayerGestureHelper(
         },
     ).apply { isQuickScaleEnabled = false }
 
-    private fun updateZoomMode(enabled: Boolean) {
+    fun updateZoomMode(enabled: Boolean) {
         if (playerView.player is MPVPlayer) {
             (playerView.player as MPVPlayer).updateZoomMode(enabled)
         } else {
             playerView.resizeMode = if (enabled) AspectRatioFrameLayout.RESIZE_MODE_ZOOM else AspectRatioFrameLayout.RESIZE_MODE_FIT
         }
+        isZoomEnabled = enabled
     }
 
     private fun releaseAction(event: MotionEvent) {
-        if (event.action == MotionEvent.ACTION_UP) {
+        if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
             activity.binding.gestureVolumeLayout.apply {
                 if (visibility == View.VISIBLE) {
                     removeCallbacks(hideGestureVolumeIndicatorOverlayAction)
@@ -361,6 +385,12 @@ class PlayerGestureHelper(
                     swipeGestureValueTrackerProgress = -1L
                 }
             }
+            currentNumberOfPointers = 0
+        }
+        if (lastPlaybackSpeed > 0 && (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL)) {
+            playerView.player?.setPlaybackSpeed(lastPlaybackSpeed)
+            lastPlaybackSpeed = 0f
+            activity.binding.gestureSpeedLayout.visibility = View.GONE
         }
     }
 
@@ -398,9 +428,12 @@ class PlayerGestureHelper(
             activity.window.attributes.screenBrightness = appPreferences.playerBrightness
         }
 
+        updateZoomMode(appPreferences.playerStartMaximized)
+
         @Suppress("ClickableViewAccessibility")
         playerView.setOnTouchListener { _, event ->
             if (playerView.useController) {
+                currentNumberOfPointers = event.pointerCount
                 when (event.pointerCount) {
                     1 -> {
                         tapGestureDetector.onTouchEvent(event)

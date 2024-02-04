@@ -51,6 +51,9 @@ constructor(
     val playerBrightnessRemember get() =
         sharedPreferences.getBoolean(Constants.PREF_PLAYER_BRIGHTNESS_REMEMBER, false)
 
+    val playerStartMaximized get() =
+        sharedPreferences.getBoolean(Constants.PREF_PLAYER_START_MAXIMIZED, false)
+
     var playerBrightness: Float
         get() = sharedPreferences.getFloat(
             Constants.PREF_PLAYER_BRIGHTNESS,
@@ -70,14 +73,9 @@ constructor(
         DEFAULT_SEEK_FORWARD_INCREMENT_MS.toString(),
     )!!.toLongOrNull() ?: DEFAULT_SEEK_FORWARD_INCREMENT_MS
     val playerMpv get() = sharedPreferences.getBoolean(Constants.PREF_PLAYER_MPV, false)
-    val playerMpvHwdec get() = sharedPreferences.getString(Constants.PREF_PLAYER_MPV_HWDEC, "mediacodec-copy")!!
-    val playerMpvHwdecCodecs: Set<String> get() = sharedPreferences.getStringSet(
-        Constants.PREF_PLAYER_MPV_HWDEC_CODECS,
-        setOf("h264", "hevc", "mpeg4", "mpeg2video", "vp8", "vp9"),
-    )!!
-    val playerMpvVo get() = sharedPreferences.getString(Constants.PREF_PLAYER_MPV_VO, "gpu")!!
+    val playerMpvHwdec get() = sharedPreferences.getString(Constants.PREF_PLAYER_MPV_HWDEC, "mediacodec")!!
+    val playerMpvVo get() = sharedPreferences.getString(Constants.PREF_PLAYER_MPV_VO, "gpu-next")!!
     val playerMpvAo get() = sharedPreferences.getString(Constants.PREF_PLAYER_MPV_AO, "audiotrack")!!
-    val playerMpvGpuApi get() = sharedPreferences.getString(Constants.PREF_PLAYER_MPV_GPU_API, "opengl")!!
     val playerIntroSkipper get() = sharedPreferences.getBoolean(Constants.PREF_PLAYER_INTRO_SKIPPER, true)
     val playerTrickPlay get() = sharedPreferences.getBoolean(Constants.PREF_PLAYER_TRICK_PLAY, true)
 
@@ -144,4 +142,30 @@ constructor(
                 putString(Constants.PREF_SORT_ORDER, value)
             }
         }
+
+    fun setValue(key: String, value: String) {
+        sharedPreferences.edit {
+            putString(key, value)
+        }
+    }
+
+    fun getBoolean(key: String, default: Boolean): Boolean {
+        return sharedPreferences.getBoolean(key, default)
+    }
+
+    fun setBoolean(key: String, value: Boolean) {
+        sharedPreferences.edit {
+            putBoolean(key, value)
+        }
+    }
+
+    fun getString(key: String, default: String?): String? {
+        return sharedPreferences.getString(key, default)
+    }
+
+    fun setString(key: String, value: String?) {
+        sharedPreferences.edit {
+            putString(key, value)
+        }
+    }
 }
