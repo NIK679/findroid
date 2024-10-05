@@ -2,7 +2,6 @@ package dev.jdtech.jellyfin
 
 import android.app.AppOpsManager
 import android.app.PictureInPictureParams
-import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
@@ -17,6 +16,7 @@ import android.os.Looper
 import android.os.Process
 import android.provider.Settings
 import android.util.Rational
+import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
@@ -74,7 +74,7 @@ class PlayerActivity : BasePlayerActivity() {
         }
 
         // Check if PiP is enabled for the app
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager?
+        val appOps = getSystemService(APP_OPS_SERVICE) as AppOpsManager?
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             appOps?.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_PICTURE_IN_PICTURE, Process.myUid(), packageName) == AppOpsManager.MODE_ALLOWED
         } else {
@@ -121,12 +121,12 @@ class PlayerActivity : BasePlayerActivity() {
                 appPreferences,
                 this,
                 binding.playerView,
-                getSystemService(Context.AUDIO_SERVICE) as AudioManager,
+                getSystemService(AUDIO_SERVICE) as AudioManager,
             )
         }
 
         binding.playerView.findViewById<View>(R.id.back_button).setOnClickListener {
-            finish()
+            finishPlayback()
         }
 
         val videoNameTextView = binding.playerView.findViewById<TextView>(R.id.video_name)
@@ -214,7 +214,7 @@ class PlayerActivity : BasePlayerActivity() {
                 launch {
                     viewModel.eventsChannelFlow.collect { event ->
                         when (event) {
-                            is PlayerEvents.NavigateBack -> finish()
+                            is PlayerEvents.NavigateBack -> finishPlayback()
                             is PlayerEvents.IsPlayingChanged -> {
                                 if (appPreferences.playerPipGesture) {
                                     try {
@@ -337,6 +337,15 @@ class PlayerActivity : BasePlayerActivity() {
         }
     }
 
+    private fun finishPlayback() {
+        try {
+            viewModel.player.clearVideoSurfaceView(binding.playerView.videoSurfaceView as SurfaceView)
+        } catch (e: Exception) {
+            Timber.e(e)
+        }
+        finish()
+    }
+
     private fun pipParams(enableAutoEnter: Boolean = viewModel.player.isPlaying): PictureInPictureParams {
         val displayAspectRatio = Rational(binding.playerView.width, binding.playerView.height)
 
@@ -396,7 +405,7 @@ class PlayerActivity : BasePlayerActivity() {
                 binding.playerView.useController = false
                 skipSegmentButton.isVisible = false
 
-                wasZoom = playerGestureHelper?.isZoomEnabled ?: false
+                wasZoom = playerGestureHelper?.isZoomEnabled == true
                 playerGestureHelper?.updateZoomMode(false)
 
                 // Brightness mode Auto

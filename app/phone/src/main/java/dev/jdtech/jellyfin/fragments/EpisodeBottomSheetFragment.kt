@@ -33,6 +33,7 @@ import dev.jdtech.jellyfin.models.PlayerItem
 import dev.jdtech.jellyfin.models.UiText
 import dev.jdtech.jellyfin.models.isDownloaded
 import dev.jdtech.jellyfin.models.isDownloading
+import dev.jdtech.jellyfin.utils.safeNavigate
 import dev.jdtech.jellyfin.utils.setIconTintColorAttribute
 import dev.jdtech.jellyfin.viewmodels.EpisodeBottomSheetEvent
 import dev.jdtech.jellyfin.viewmodels.EpisodeBottomSheetViewModel
@@ -290,7 +291,7 @@ class EpisodeBottomSheetFragment : BottomSheetDialogFragment() {
             binding.year.text = formatDateTime(episode.premiereDate)
             binding.playtime.text = getString(CoreR.string.runtime_minutes, episode.runtimeTicks.div(600000000))
             episode.communityRating?.also {
-                binding.communityRating.text = episode.communityRating.toString()
+                binding.communityRating.text = String.format(resources.configuration.locales.get(0), "%.1f", episode.communityRating)
                 binding.communityRating.isVisible = true
             }
             binding.missingIcon.isVisible = false
@@ -352,7 +353,7 @@ class EpisodeBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun bindPlayerItemsError(error: Exception) {
-        Timber.e(error.message)
+        Timber.e(error)
         binding.playerItemsError.isVisible = true
         playButtonNormal()
         binding.playerItemsErrorDetails.setOnClickListener {
@@ -405,7 +406,7 @@ class EpisodeBottomSheetFragment : BottomSheetDialogFragment() {
     private fun navigateToPlayerActivity(
         playerItems: Array<PlayerItem>,
     ) {
-        findNavController().navigate(
+        findNavController().safeNavigate(
             EpisodeBottomSheetFragmentDirections.actionEpisodeBottomSheetFragmentToPlayerActivity(
                 playerItems,
             ),
@@ -413,7 +414,7 @@ class EpisodeBottomSheetFragment : BottomSheetDialogFragment() {
     }
 
     private fun navigateToSeries(id: UUID, name: String) {
-        findNavController().navigate(
+        findNavController().safeNavigate(
             EpisodeBottomSheetFragmentDirections.actionEpisodeBottomSheetFragmentToShowFragment(
                 itemId = id,
                 itemName = name,

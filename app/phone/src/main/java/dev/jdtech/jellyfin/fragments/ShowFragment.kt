@@ -31,6 +31,7 @@ import dev.jdtech.jellyfin.models.FindroidSourceType
 import dev.jdtech.jellyfin.models.PlayerItem
 import dev.jdtech.jellyfin.models.isDownloaded
 import dev.jdtech.jellyfin.utils.checkIfLoginRequired
+import dev.jdtech.jellyfin.utils.safeNavigate
 import dev.jdtech.jellyfin.utils.setIconTintColorAttribute
 import dev.jdtech.jellyfin.viewmodels.PlayerItemsEvent
 import dev.jdtech.jellyfin.viewmodels.PlayerViewModel
@@ -213,7 +214,7 @@ class ShowFragment : Fragment() {
             }
             binding.officialRating.text = item.officialRating
             item.communityRating?.also {
-                binding.communityRating.text = item.communityRating.toString()
+                binding.communityRating.text = String.format(resources.configuration.locales.get(0), "%.1f", it)
                 binding.communityRating.isVisible = true
             }
 
@@ -301,7 +302,7 @@ class ShowFragment : Fragment() {
     }
 
     private fun bindPlayerItemsError(error: Exception) {
-        Timber.e(error.message)
+        Timber.e(error)
         binding.playerItemsError.visibility = View.VISIBLE
         playButtonNormal()
         binding.playerItemsErrorDetails.setOnClickListener {
@@ -317,7 +318,7 @@ class ShowFragment : Fragment() {
     }
 
     private fun navigateToEpisodeBottomSheetFragment(episode: FindroidItem) {
-        findNavController().navigate(
+        findNavController().safeNavigate(
             ShowFragmentDirections.actionShowFragmentToEpisodeBottomSheetFragment(
                 episode.id,
             ),
@@ -325,7 +326,7 @@ class ShowFragment : Fragment() {
     }
 
     private fun navigateToSeasonFragment(season: FindroidSeason) {
-        findNavController().navigate(
+        findNavController().safeNavigate(
             ShowFragmentDirections.actionShowFragmentToSeasonFragment(
                 season.seriesId,
                 season.id,
@@ -339,7 +340,7 @@ class ShowFragment : Fragment() {
     private fun navigateToPlayerActivity(
         playerItems: Array<PlayerItem>,
     ) {
-        findNavController().navigate(
+        findNavController().safeNavigate(
             ShowFragmentDirections.actionShowFragmentToPlayerActivity(
                 playerItems,
             ),
@@ -347,7 +348,7 @@ class ShowFragment : Fragment() {
     }
 
     private fun navigateToPersonDetail(personId: UUID) {
-        findNavController().navigate(
+        findNavController().safeNavigate(
             ShowFragmentDirections.actionShowFragmentToPersonDetailFragment(personId),
         )
     }
