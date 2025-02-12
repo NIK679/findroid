@@ -38,6 +38,7 @@ jobs:
           keyAlias: ${{ secrets.ALIAS }}
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
+          buildToolsVersion: 35.0.0
           
       # - name: Sign Debug APK
       #   uses: ilharp/sign-android-release@v1
