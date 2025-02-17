@@ -88,10 +88,6 @@ ktlint {
     ignoreFailures.set(false)
 }
 
-aboutLibraries {
-    excludeFields = arrayOf("generated")
-}
-
 dependencies {
     implementation(projects.core)
     implementation(projects.data)
