@@ -18,6 +18,7 @@ import android.view.WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_OFF
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
+import androidx.core.view.isVisible
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.PlayerView
 import coil3.load
@@ -27,9 +28,9 @@ import coil3.transform.RoundedCornersTransformation
 import dev.jdtech.jellyfin.PlayerActivity
 import dev.jdtech.jellyfin.core.Constants
 import dev.jdtech.jellyfin.isControlsLocked
-import dev.jdtech.jellyfin.models.PlayerChapter
-import dev.jdtech.jellyfin.models.Trickplay
-import dev.jdtech.jellyfin.mpv.MPVPlayer
+import dev.jdtech.jellyfin.player.core.domain.models.PlayerChapter
+import dev.jdtech.jellyfin.player.core.domain.models.Trickplay
+import dev.jdtech.jellyfin.player.local.mpv.MPVPlayer
 import dev.jdtech.jellyfin.settings.domain.AppPreferences
 import kotlinx.coroutines.Dispatchers
 import timber.log.Timber
@@ -178,6 +179,7 @@ class PlayerGestureHelper(
     }
 
     private fun displayChapter(chapter: PlayerChapter) {
+        activity.binding.progressScrubberTrickplay.visibility = View.GONE
         activity.binding.progressScrubberLayout.visibility = View.VISIBLE
         activity.binding.progressScrubberText.text = chapter.name ?: ""
     }
@@ -429,21 +431,21 @@ class PlayerGestureHelper(
     private fun releaseAction(event: MotionEvent) {
         if (event.action == MotionEvent.ACTION_UP || event.action == MotionEvent.ACTION_CANCEL) {
             activity.binding.gestureVolumeLayout.apply {
-                if (visibility == View.VISIBLE) {
+                if (isVisible) {
                     removeCallbacks(hideGestureVolumeIndicatorOverlayAction)
                     postDelayed(hideGestureVolumeIndicatorOverlayAction, 1000)
                     swipeGestureVolumeOpen = false
                 }
             }
             activity.binding.gestureBrightnessLayout.apply {
-                if (visibility == View.VISIBLE) {
+                if (isVisible) {
                     removeCallbacks(hideGestureBrightnessIndicatorOverlayAction)
                     postDelayed(hideGestureBrightnessIndicatorOverlayAction, 1000)
                     swipeGestureBrightnessOpen = false
                 }
             }
             activity.binding.progressScrubberLayout.apply {
-                if (visibility == View.VISIBLE) {
+                if (isVisible) {
                     if (swipeGestureValueTrackerProgress > -1) {
                         playerView.player?.seekTo(swipeGestureValueTrackerProgress)
                     }
@@ -512,8 +514,12 @@ class PlayerGestureHelper(
     }
 
     init {
-        if (appPreferences.getValue(appPreferences.playerGesturesBrightnessRemember)) {
-            activity.window.attributes.screenBrightness = appPreferences.getValue(appPreferences.playerBrightness)
+        if (appPreferences.getValue(appPreferences.playerGesturesVB) &&
+            appPreferences.getValue(appPreferences.playerGesturesBrightnessRemember)
+        ) {
+            activity.window.attributes = activity.window.attributes.apply {
+                screenBrightness = appPreferences.getValue(appPreferences.playerBrightness)
+            }
         }
 
         updateZoomMode(appPreferences.getValue(appPreferences.playerGesturesStartMaximized))

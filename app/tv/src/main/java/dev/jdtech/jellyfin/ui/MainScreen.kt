@@ -29,7 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Tab
@@ -40,7 +40,6 @@ import androidx.tv.material3.Text
 import dev.jdtech.jellyfin.core.presentation.dummy.dummyServer
 import dev.jdtech.jellyfin.core.presentation.dummy.dummyUser
 import dev.jdtech.jellyfin.models.CollectionType
-import dev.jdtech.jellyfin.models.PlayerItem
 import dev.jdtech.jellyfin.models.User
 import dev.jdtech.jellyfin.presentation.film.HomeScreen
 import dev.jdtech.jellyfin.presentation.film.MediaScreen
@@ -50,6 +49,7 @@ import dev.jdtech.jellyfin.ui.components.LoadingIndicator
 import dev.jdtech.jellyfin.ui.components.PillBorderIndicator
 import dev.jdtech.jellyfin.ui.components.ProfileButton
 import dev.jdtech.jellyfin.viewmodels.MainViewModel
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 import dev.jdtech.jellyfin.core.R as CoreR
 
@@ -59,7 +59,7 @@ fun MainScreen(
     navigateToLibrary: (libraryId: UUID, libraryName: String, libraryType: CollectionType) -> Unit,
     navigateToMovie: (itemId: UUID) -> Unit,
     navigateToShow: (itemId: UUID) -> Unit,
-    navigateToPlayer: (items: ArrayList<PlayerItem>) -> Unit,
+    navigateToPlayer: (itemId: UUID, itemKind: BaseItemKind) -> Unit,
     mainViewModel: MainViewModel = hiltViewModel(),
 ) {
     val delegatedUiState by mainViewModel.uiState.collectAsState()
@@ -79,8 +79,8 @@ fun MainScreen(
 }
 
 enum class TabDestination(
-    @DrawableRes val icon: Int,
-    @StringRes val label: Int,
+    @param:DrawableRes val icon: Int,
+    @param:StringRes val label: Int,
 ) {
     Search(CoreR.drawable.ic_search, CoreR.string.search),
     Home(CoreR.drawable.ic_home, CoreR.string.title_home),
@@ -95,7 +95,7 @@ private fun MainScreenLayout(
     navigateToLibrary: (libraryId: UUID, libraryName: String, libraryType: CollectionType) -> Unit,
     navigateToMovie: (itemId: UUID) -> Unit,
     navigateToShow: (itemId: UUID) -> Unit,
-    navigateToPlayer: (items: ArrayList<PlayerItem>) -> Unit,
+    navigateToPlayer: (itemId: UUID, itemKind: BaseItemKind) -> Unit,
 ) {
     var focusedTabIndex by rememberSaveable { mutableIntStateOf(1) }
     var activeTabIndex by rememberSaveable { mutableIntStateOf(focusedTabIndex) }
@@ -222,7 +222,7 @@ private fun MainScreenLayoutPreview() {
             navigateToLibrary = { _, _, _ -> },
             navigateToMovie = {},
             navigateToShow = {},
-            navigateToPlayer = {},
+            navigateToPlayer = { _, _ -> },
         )
     }
 }

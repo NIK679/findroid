@@ -10,9 +10,9 @@ import dev.jdtech.jellyfin.models.FindroidCollection
 import dev.jdtech.jellyfin.models.FindroidEpisode
 import dev.jdtech.jellyfin.models.FindroidItem
 import dev.jdtech.jellyfin.models.FindroidMovie
+import dev.jdtech.jellyfin.models.FindroidPerson
 import dev.jdtech.jellyfin.models.FindroidSeason
 import dev.jdtech.jellyfin.models.FindroidSegment
-import dev.jdtech.jellyfin.models.FindroidSegmentType
 import dev.jdtech.jellyfin.models.FindroidShow
 import dev.jdtech.jellyfin.models.FindroidSource
 import dev.jdtech.jellyfin.models.SortBy
@@ -20,16 +20,15 @@ import dev.jdtech.jellyfin.models.toFindroidCollection
 import dev.jdtech.jellyfin.models.toFindroidEpisode
 import dev.jdtech.jellyfin.models.toFindroidItem
 import dev.jdtech.jellyfin.models.toFindroidMovie
+import dev.jdtech.jellyfin.models.toFindroidPerson
 import dev.jdtech.jellyfin.models.toFindroidSeason
 import dev.jdtech.jellyfin.models.toFindroidSegment
 import dev.jdtech.jellyfin.models.toFindroidShow
 import dev.jdtech.jellyfin.models.toFindroidSource
 import dev.jdtech.jellyfin.settings.domain.AppPreferences
-import io.ktor.util.toByteArray
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
-import org.jellyfin.sdk.api.client.extensions.get
 import org.jellyfin.sdk.model.api.BaseItemDto
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.DeviceOptionsDto
@@ -61,10 +60,6 @@ class JellyfinRepositoryImpl(
 
     override suspend fun getUserViews(): List<BaseItemDto> = withContext(Dispatchers.IO) {
         jellyfinApi.viewsApi.getUserViews(jellyfinApi.userId!!).content.items
-    }
-
-    override suspend fun getItem(itemId: UUID): BaseItemDto = withContext(Dispatchers.IO) {
-        jellyfinApi.userLibraryApi.getItem(itemId, jellyfinApi.userId!!).content
     }
 
     override suspend fun getEpisode(itemId: UUID): FindroidEpisode =
@@ -154,6 +149,11 @@ class JellyfinRepositoryImpl(
             },
         ).flow
     }
+
+    override suspend fun getPerson(personId: UUID): FindroidPerson =
+        withContext(Dispatchers.IO) {
+            jellyfinApi.userLibraryApi.getItem(personId, jellyfinApi.userId!!).content.toFindroidPerson(this@JellyfinRepositoryImpl)
+        }
 
     override suspend fun getPersonItems(
         personIds: List<UUID>,
@@ -337,30 +337,20 @@ class JellyfinRepositoryImpl(
 
     override suspend fun getSegments(itemId: UUID): List<FindroidSegment> =
         withContext(Dispatchers.IO) {
-            val segments = database.getSegments(itemId).map { it.toFindroidSegment() }
-
-            if (segments.isNotEmpty()) {
-                return@withContext segments
+            val databaseSegments = database.getSegments(itemId).map {
+                it.toFindroidSegment()
             }
 
-            // https://github.com/jumoog/intro-skipper/blob/master/docs/api.md
-            try {
-                val segmentsMap = jellyfinApi.api.get<Map<String, FindroidSegment>>(
-                    pathTemplate = "/Episode/{itemId}/IntroSkipperSegments",
-                    pathParameters = mapOf("itemId" to itemId),
-                ).content
+            if (databaseSegments.isNotEmpty()) {
+                return@withContext databaseSegments
+            }
 
-                for ((type, segment) in segmentsMap) {
-                    segment.type = when (type) {
-                        "Introduction" -> FindroidSegmentType.INTRO
-                        "Credits" -> FindroidSegmentType.CREDITS
-                        else -> FindroidSegmentType.UNKNOWN
-                    }
+            try {
+                val apiSegments = jellyfinApi.mediaSegmentsApi.getItemSegments(itemId).content.items.map {
+                    it.toFindroidSegment()
                 }
 
-                Timber.tag("SegmentInfo").d("segments: %s", segmentsMap.values)
-
-                return@withContext segmentsMap.values.toList()
+                return@withContext apiSegments
             } catch (e: Exception) {
                 Timber.e(e)
                 return@withContext emptyList()
@@ -377,7 +367,7 @@ class JellyfinRepositoryImpl(
                     }
                 } catch (_: Exception) { }
 
-                return@withContext jellyfinApi.trickplayApi.getTrickplayTileImage(itemId, width, index).content.toByteArray()
+                return@withContext jellyfinApi.trickplayApi.getTrickplayTileImage(itemId, width, index).content
             } catch (_: Exception) {
                 return@withContext null
             }

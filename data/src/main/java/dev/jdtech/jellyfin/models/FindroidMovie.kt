@@ -20,7 +20,7 @@ data class FindroidMovie(
     override val runtimeTicks: Long,
     override val playbackPositionTicks: Long,
     val premiereDate: LocalDateTime?,
-    val people: List<FindroidPerson>,
+    val people: List<FindroidItemPerson>,
     val genres: List<String>,
     val communityRating: Float?,
     val officialRating: String?,
@@ -30,7 +30,7 @@ data class FindroidMovie(
     val trailer: String?,
     override val unplayedItemCount: Int? = null,
     override val images: FindroidImages,
-    override val chapters: List<FindroidChapter>?,
+    override val chapters: List<FindroidChapter>,
     override val trickplayInfo: Map<String, FindroidTrickplayInfo>?,
 ) : FindroidItem, FindroidSources
 
@@ -101,7 +101,7 @@ fun FindroidMovieDto.toFindroidMovie(database: ServerDatabaseDao, userId: UUID):
         sources = database.getSources(id).map { it.toFindroidSource(database) },
         trailer = null,
         images = FindroidImages(),
-        chapters = chapters,
+        chapters = chapters ?: emptyList(),
         trickplayInfo = trickplayInfos,
     )
 }

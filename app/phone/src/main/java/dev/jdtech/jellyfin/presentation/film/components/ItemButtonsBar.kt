@@ -3,8 +3,6 @@ package dev.jdtech.jellyfin.presentation.film.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
@@ -36,8 +34,6 @@ fun ItemButtonsBar(
     onDownloadClick: () -> Unit,
     onTrailerClick: (uri: String) -> Unit,
     modifier: Modifier = Modifier,
-    isLoadingPlayer: Boolean = false,
-    isLoadingRestartPlayer: Boolean = false,
 ) {
     val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
 
@@ -51,38 +47,31 @@ fun ItemButtonsBar(
         else -> null
     }
 
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacings.small),
-    ) {
-        Row {
-            PlayButton(
-                item = item,
-                onClick = {
-                    onPlayClick(false)
-                },
-                modifier = Modifier.weight(
-                    weight = 1f,
-                    fill = !windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND),
-                ),
-                enabled = !isLoadingPlayer && !isLoadingRestartPlayer,
-                isLoading = isLoadingPlayer,
-            )
-            if (item.playbackPositionTicks.div(600000000) > 0) {
-                FilledTonalIconButton(
-                    onClick = {
-                        onPlayClick(true)
-                    },
-                    enabled = !isLoadingPlayer && !isLoadingRestartPlayer,
+    CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacings.small),
+        ) {
+            if (!windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacings.small),
                 ) {
-                    when (isLoadingRestartPlayer) {
-                        true -> {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = LocalContentColor.current,
-                            )
-                        }
-                        false -> {
+                    PlayButton(
+                        item = item,
+                        onClick = {
+                            onPlayClick(false)
+                        },
+                        modifier = Modifier.weight(
+                            weight = 1f,
+                            fill = true,
+                        ),
+                    )
+                    if (item.playbackPositionTicks.div(600000000) > 0) {
+                        FilledTonalIconButton(
+                            onClick = {
+                                onPlayClick(true)
+                            },
+                        ) {
                             Icon(
                                 painter = painterResource(CoreR.drawable.ic_rotate_ccw),
                                 contentDescription = null,
@@ -91,11 +80,29 @@ fun ItemButtonsBar(
                     }
                 }
             }
-        }
-        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides 0.dp) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacings.small),
             ) {
+                if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)) {
+                    PlayButton(
+                        item = item,
+                        onClick = {
+                            onPlayClick(false)
+                        },
+                    )
+                    if (item.playbackPositionTicks.div(600000000) > 0) {
+                        FilledTonalIconButton(
+                            onClick = {
+                                onPlayClick(true)
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(CoreR.drawable.ic_rotate_ccw),
+                                contentDescription = null,
+                            )
+                        }
+                    }
+                }
                 trailerUri?.let { uri ->
                     FilledTonalIconButton(
                         onClick = {

@@ -1,7 +1,6 @@
 package dev.jdtech.jellyfin.presentation.film
 
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +14,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -24,9 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -37,7 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.core.graphics.toColorInt
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jdtech.jellyfin.PlayerActivity
 import dev.jdtech.jellyfin.core.presentation.dummy.dummyEpisode
@@ -53,10 +51,8 @@ import dev.jdtech.jellyfin.presentation.film.components.VideoMetadataBar
 import dev.jdtech.jellyfin.presentation.theme.FindroidTheme
 import dev.jdtech.jellyfin.presentation.theme.spacings
 import dev.jdtech.jellyfin.presentation.utils.rememberSafePadding
-import dev.jdtech.jellyfin.utils.ObserveAsEvents
 import dev.jdtech.jellyfin.utils.format
-import dev.jdtech.jellyfin.viewmodels.PlayerItemsEvent
-import dev.jdtech.jellyfin.viewmodels.PlayerViewModel
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 import dev.jdtech.jellyfin.core.R as CoreR
 
@@ -65,53 +61,30 @@ fun EpisodeScreen(
     episodeId: UUID,
     navigateBack: () -> Unit,
     navigateToPerson: (personId: UUID) -> Unit,
+    navigateToSeason: (seasonId: UUID) -> Unit,
     viewModel: EpisodeViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val state by viewModel.state.collectAsStateWithLifecycle()
-
-    var isLoadingPlayer by remember { mutableStateOf(false) }
-    var isLoadingRestartPlayer by remember { mutableStateOf(false) }
 
     LaunchedEffect(true) {
         viewModel.loadEpisode(episodeId = episodeId)
     }
 
-    ObserveAsEvents(playerViewModel.eventsChannelFlow) { event ->
-        when (event) {
-            is PlayerItemsEvent.PlayerItemsReady -> {
-                isLoadingPlayer = false
-                isLoadingRestartPlayer = false
-                val intent = Intent(context, PlayerActivity::class.java)
-                intent.putExtra("items", ArrayList(event.items))
-                context.startActivity(intent)
-            }
-            is PlayerItemsEvent.PlayerItemsError -> {
-                isLoadingPlayer = false
-                isLoadingRestartPlayer = false
-                Toast.makeText(context, CoreR.string.error_preparing_player_items, Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
     EpisodeScreenLayout(
         state = state,
-        isLoadingPlayer = isLoadingPlayer,
-        isLoadingRestartPlayer = isLoadingRestartPlayer,
         onAction = { action ->
             when (action) {
                 is EpisodeAction.Play -> {
-                    when (action.startFromBeginning) {
-                        true -> isLoadingRestartPlayer = true
-                        false -> isLoadingPlayer = true
-                    }
-                    state.episode?.let { episode ->
-                        playerViewModel.loadPlayerItems(episode, startFromBeginning = action.startFromBeginning)
-                    }
+                    val intent = Intent(context, PlayerActivity::class.java)
+                    intent.putExtra("itemId", episodeId.toString())
+                    intent.putExtra("itemKind", BaseItemKind.EPISODE.serialName)
+                    intent.putExtra("startFromBeginning", action.startFromBeginning)
+                    context.startActivity(intent)
                 }
                 is EpisodeAction.OnBackClick -> navigateBack()
                 is EpisodeAction.NavigateToPerson -> navigateToPerson(action.personId)
+                is EpisodeAction.NavigateToSeason -> navigateToSeason(action.seasonId)
                 else -> Unit
             }
             viewModel.onAction(action)
@@ -122,8 +95,6 @@ fun EpisodeScreen(
 @Composable
 private fun EpisodeScreenLayout(
     state: EpisodeState,
-    isLoadingPlayer: Boolean,
-    isLoadingRestartPlayer: Boolean,
     onAction: (EpisodeAction) -> Unit,
 ) {
     val safePadding = rememberSafePadding()
@@ -155,13 +126,14 @@ private fun EpisodeScreenLayout(
                                     end = paddingEnd,
                                 ),
                         ) {
+                            val seasonName = episode.seasonName ?: run {
+                                stringResource(CoreR.string.season_number, episode.parentIndexNumber)
+                            }
                             Text(
-                                text = stringResource(
-                                    id = CoreR.string.season_episode,
-                                    episode.parentIndexNumber,
+                                text = "$seasonName - " + stringResource(
+                                    id = CoreR.string.episode_number,
                                     episode.indexNumber,
                                 ),
-                                overflow = TextOverflow.Ellipsis,
                                 maxLines = 1,
                                 style = MaterialTheme.typography.labelLarge,
                             )
@@ -238,8 +210,6 @@ private fun EpisodeScreenLayout(
                         onTrailerClick = {},
                         onDownloadClick = {},
                         modifier = Modifier.fillMaxWidth(),
-                        isLoadingPlayer = isLoadingPlayer,
-                        isLoadingRestartPlayer = isLoadingRestartPlayer,
                     )
                     Spacer(Modifier.height(MaterialTheme.spacings.small))
                     OverviewText(
@@ -291,6 +261,23 @@ private fun EpisodeScreenLayout(
                     contentDescription = null,
                 )
             }
+            state.episode?.let { episode ->
+                Button(
+                    onClick = { onAction(EpisodeAction.NavigateToSeason(episode.seasonId)) },
+                    modifier = Modifier
+                        .alpha(0.7f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Black,
+                        contentColor = Color.White,
+                    ),
+                ) {
+                    episode.seasonName?.let { seasonName ->
+                        Text(seasonName)
+                    } ?: run {
+                        Text(stringResource(CoreR.string.season_number, episode.parentIndexNumber))
+                    }
+                }
+            }
         }
     }
 }
@@ -304,8 +291,6 @@ private fun EpisodeScreenLayoutPreview() {
                 episode = dummyEpisode,
                 videoMetadata = dummyVideoMetadata,
             ),
-            isLoadingPlayer = false,
-            isLoadingRestartPlayer = false,
             onAction = {},
         )
     }

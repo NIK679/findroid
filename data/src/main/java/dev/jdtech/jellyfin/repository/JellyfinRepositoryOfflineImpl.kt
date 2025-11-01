@@ -8,6 +8,7 @@ import dev.jdtech.jellyfin.models.FindroidCollection
 import dev.jdtech.jellyfin.models.FindroidEpisode
 import dev.jdtech.jellyfin.models.FindroidItem
 import dev.jdtech.jellyfin.models.FindroidMovie
+import dev.jdtech.jellyfin.models.FindroidPerson
 import dev.jdtech.jellyfin.models.FindroidSeason
 import dev.jdtech.jellyfin.models.FindroidSegment
 import dev.jdtech.jellyfin.models.FindroidShow
@@ -45,10 +46,6 @@ class JellyfinRepositoryOfflineImpl(
 
     override suspend fun getUserViews(): List<BaseItemDto> {
         return emptyList()
-    }
-
-    override suspend fun getItem(itemId: UUID): BaseItemDto {
-        TODO("Not yet implemented")
     }
 
     override suspend fun getMovie(itemId: UUID): FindroidMovie =
@@ -94,6 +91,10 @@ class JellyfinRepositoryOfflineImpl(
         sortBy: SortBy,
         sortOrder: SortOrder,
     ): Flow<PagingData<FindroidItem>> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getPerson(personId: UUID): FindroidPerson {
         TODO("Not yet implemented")
     }
 

@@ -24,9 +24,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -38,7 +35,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.core.graphics.toColorInt
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jdtech.jellyfin.PlayerActivity
 import dev.jdtech.jellyfin.core.presentation.dummy.dummyMovie
@@ -55,9 +52,7 @@ import dev.jdtech.jellyfin.presentation.film.components.VideoMetadataBar
 import dev.jdtech.jellyfin.presentation.theme.FindroidTheme
 import dev.jdtech.jellyfin.presentation.theme.spacings
 import dev.jdtech.jellyfin.presentation.utils.rememberSafePadding
-import dev.jdtech.jellyfin.utils.ObserveAsEvents
-import dev.jdtech.jellyfin.viewmodels.PlayerItemsEvent
-import dev.jdtech.jellyfin.viewmodels.PlayerViewModel
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 import dev.jdtech.jellyfin.core.R as CoreR
 
@@ -67,51 +62,26 @@ fun MovieScreen(
     navigateBack: () -> Unit,
     navigateToPerson: (personId: UUID) -> Unit,
     viewModel: MovieViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    var isLoadingPlayer by remember { mutableStateOf(false) }
-    var isLoadingRestartPlayer by remember { mutableStateOf(false) }
-
     LaunchedEffect(true) {
         viewModel.loadMovie(movieId = movieId)
     }
 
-    ObserveAsEvents(playerViewModel.eventsChannelFlow) { event ->
-        when (event) {
-            is PlayerItemsEvent.PlayerItemsReady -> {
-                isLoadingPlayer = false
-                isLoadingRestartPlayer = false
-                val intent = Intent(context, PlayerActivity::class.java)
-                intent.putExtra("items", ArrayList(event.items))
-                context.startActivity(intent)
-            }
-            is PlayerItemsEvent.PlayerItemsError -> {
-                isLoadingPlayer = false
-                isLoadingRestartPlayer = false
-                Toast.makeText(context, CoreR.string.error_preparing_player_items, Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
     MovieScreenLayout(
         state = state,
-        isLoadingPlayer = isLoadingPlayer,
-        isLoadingRestartPlayer = isLoadingRestartPlayer,
         onAction = { action ->
             when (action) {
                 is MovieAction.Play -> {
-                    when (action.startFromBeginning) {
-                        true -> isLoadingRestartPlayer = true
-                        false -> isLoadingPlayer = true
-                    }
-                    state.movie?.let { movie ->
-                        playerViewModel.loadPlayerItems(movie, startFromBeginning = action.startFromBeginning)
-                    }
+                    val intent = Intent(context, PlayerActivity::class.java)
+                    intent.putExtra("itemId", movieId.toString())
+                    intent.putExtra("itemKind", BaseItemKind.MOVIE.serialName)
+                    intent.putExtra("startFromBeginning", action.startFromBeginning)
+                    context.startActivity(intent)
                 }
                 is MovieAction.PlayTrailer -> {
                     try {
@@ -132,8 +102,6 @@ fun MovieScreen(
 @Composable
 private fun MovieScreenLayout(
     state: MovieState,
-    isLoadingPlayer: Boolean,
-    isLoadingRestartPlayer: Boolean,
     onAction: (MovieAction) -> Unit,
 ) {
     val safePadding = rememberSafePadding()
@@ -256,8 +224,6 @@ private fun MovieScreenLayout(
                         },
                         onDownloadClick = {},
                         modifier = Modifier.fillMaxWidth(),
-                        isLoadingPlayer = isLoadingPlayer,
-                        isLoadingRestartPlayer = isLoadingRestartPlayer,
                     )
                     Spacer(Modifier.height(MaterialTheme.spacings.small))
                     OverviewText(
@@ -329,8 +295,6 @@ private fun EpisodeScreenLayoutPreview() {
                 movie = dummyMovie,
                 videoMetadata = dummyVideoMetadata,
             ),
-            isLoadingPlayer = false,
-            isLoadingRestartPlayer = false,
             onAction = {},
         )
     }

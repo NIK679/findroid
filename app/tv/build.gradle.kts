@@ -11,16 +11,16 @@ plugins {
 
 android {
     namespace = "dev.jdtech.jellyfin"
-    compileSdk = Versions.compileSdk
-    buildToolsVersion = Versions.buildTools
+    compileSdk = Versions.COMPILE_SDK
+    buildToolsVersion = Versions.BUILD_TOOLS
 
     defaultConfig {
         applicationId = "dev.jdtech.jellyfin"
-        minSdk = Versions.minSdk
-        targetSdk = Versions.targetSdk
+        minSdk = Versions.MIN_SDK
+        targetSdk = Versions.TARGET_SDK
 
-        versionCode = Versions.appCode
-        versionName = Versions.appName
+        versionCode = Versions.APP_CODE
+        versionName = Versions.APP_NAME
     }
 
     buildTypes {
@@ -60,8 +60,8 @@ android {
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
 
-        sourceCompatibility = Versions.java
-        targetCompatibility = Versions.java
+        sourceCompatibility = Versions.JAVA
+        targetCompatibility = Versions.JAVA
     }
 
     buildFeatures {
@@ -84,7 +84,7 @@ android {
 }
 
 ktlint {
-    version.set(Versions.ktlint)
+    version.set(Versions.KTLINT)
     android.set(true)
     ignoreFailures.set(false)
 }
@@ -95,7 +95,7 @@ dependencies {
     implementation(projects.setup)
     implementation(projects.modes.film)
     implementation(projects.player.core)
-    implementation(projects.player.video)
+    implementation(projects.player.local)
     implementation(projects.settings)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.foundation)
@@ -103,7 +103,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.core)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.media3.exoplayer)
     implementation(libs.androidx.media3.ui)
@@ -119,7 +119,6 @@ dependencies {
     implementation(libs.jellyfin.core)
     implementation(libs.media3.ffmpeg.decoder)
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
 
     coreLibraryDesugaring(libs.android.desugar.jdk)

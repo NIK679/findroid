@@ -5,6 +5,7 @@ import dev.jdtech.jellyfin.models.FindroidCollection
 import dev.jdtech.jellyfin.models.FindroidEpisode
 import dev.jdtech.jellyfin.models.FindroidItem
 import dev.jdtech.jellyfin.models.FindroidMovie
+import dev.jdtech.jellyfin.models.FindroidPerson
 import dev.jdtech.jellyfin.models.FindroidSeason
 import dev.jdtech.jellyfin.models.FindroidSegment
 import dev.jdtech.jellyfin.models.FindroidShow
@@ -24,7 +25,6 @@ interface JellyfinRepository {
 
     suspend fun getUserViews(): List<BaseItemDto>
 
-    suspend fun getItem(itemId: UUID): BaseItemDto
     suspend fun getEpisode(itemId: UUID): FindroidEpisode
     suspend fun getMovie(itemId: UUID): FindroidMovie
 
@@ -51,6 +51,10 @@ interface JellyfinRepository {
         sortBy: SortBy = SortBy.defaultValue,
         sortOrder: SortOrder = SortOrder.ASCENDING,
     ): Flow<PagingData<FindroidItem>>
+
+    suspend fun getPerson(
+        personId: UUID,
+    ): FindroidPerson
 
     suspend fun getPersonItems(
         personIds: List<UUID>,

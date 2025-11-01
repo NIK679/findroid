@@ -28,9 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -44,7 +41,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.toColorInt
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.jdtech.jellyfin.PlayerActivity
 import dev.jdtech.jellyfin.core.presentation.dummy.dummyShow
@@ -63,10 +60,8 @@ import dev.jdtech.jellyfin.presentation.film.components.OverviewText
 import dev.jdtech.jellyfin.presentation.theme.FindroidTheme
 import dev.jdtech.jellyfin.presentation.theme.spacings
 import dev.jdtech.jellyfin.presentation.utils.rememberSafePadding
-import dev.jdtech.jellyfin.utils.ObserveAsEvents
 import dev.jdtech.jellyfin.utils.getShowDateString
-import dev.jdtech.jellyfin.viewmodels.PlayerItemsEvent
-import dev.jdtech.jellyfin.viewmodels.PlayerViewModel
+import org.jellyfin.sdk.model.api.BaseItemKind
 import java.util.UUID
 import dev.jdtech.jellyfin.core.R as CoreR
 
@@ -77,51 +72,25 @@ fun ShowScreen(
     navigateToItem: (item: FindroidItem) -> Unit,
     navigateToPerson: (personId: UUID) -> Unit,
     viewModel: ShowViewModel = hiltViewModel(),
-    playerViewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    var isLoadingPlayer by remember { mutableStateOf(false) }
-    var isLoadingRestartPlayer by remember { mutableStateOf(false) }
-
     LaunchedEffect(true) {
         viewModel.loadShow(showId = showId)
     }
 
-    ObserveAsEvents(playerViewModel.eventsChannelFlow) { event ->
-        when (event) {
-            is PlayerItemsEvent.PlayerItemsReady -> {
-                isLoadingPlayer = false
-                isLoadingRestartPlayer = false
-                val intent = Intent(context, PlayerActivity::class.java)
-                intent.putExtra("items", ArrayList(event.items))
-                context.startActivity(intent)
-            }
-            is PlayerItemsEvent.PlayerItemsError -> {
-                isLoadingPlayer = false
-                isLoadingRestartPlayer = false
-                Toast.makeText(context, CoreR.string.error_preparing_player_items, Toast.LENGTH_LONG).show()
-            }
-        }
-    }
-
     ShowScreenLayout(
         state = state,
-        isLoadingPlayer = isLoadingPlayer,
-        isLoadingRestartPlayer = isLoadingRestartPlayer,
         onAction = { action ->
             when (action) {
                 is ShowAction.Play -> {
-                    when (action.startFromBeginning) {
-                        true -> isLoadingRestartPlayer = true
-                        false -> isLoadingPlayer = true
-                    }
-                    state.show?.let { show ->
-                        playerViewModel.loadPlayerItems(show, startFromBeginning = action.startFromBeginning)
-                    }
+                    val intent = Intent(context, PlayerActivity::class.java)
+                    intent.putExtra("itemId", showId.toString())
+                    intent.putExtra("itemKind", BaseItemKind.SERIES.serialName)
+                    context.startActivity(intent)
                 }
                 is ShowAction.PlayTrailer -> {
                     try {
@@ -143,8 +112,6 @@ fun ShowScreen(
 @Composable
 private fun ShowScreenLayout(
     state: ShowState,
-    isLoadingPlayer: Boolean,
-    isLoadingRestartPlayer: Boolean,
     onAction: (ShowAction) -> Unit,
 ) {
     val safePadding = rememberSafePadding()
@@ -262,8 +229,6 @@ private fun ShowScreenLayout(
                         },
                         onDownloadClick = {},
                         modifier = Modifier.fillMaxWidth(),
-                        isLoadingPlayer = isLoadingPlayer,
-                        isLoadingRestartPlayer = isLoadingRestartPlayer,
                     )
                     Spacer(Modifier.height(MaterialTheme.spacings.small))
                     OverviewText(
@@ -408,8 +373,6 @@ private fun EpisodeScreenLayoutPreview() {
             state = ShowState(
                 show = dummyShow,
             ),
-            isLoadingPlayer = false,
-            isLoadingRestartPlayer = false,
             onAction = {},
         )
     }

@@ -4,7 +4,11 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -17,23 +21,31 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.zIndex
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaSession
 import androidx.media3.ui.PlayerView
+import androidx.tv.material3.Button
+import androidx.tv.material3.ButtonDefaults
+import androidx.tv.material3.Glow
+import androidx.tv.material3.Icon
 import androidx.tv.material3.MaterialTheme
 import dev.jdtech.jellyfin.core.R
-import dev.jdtech.jellyfin.models.PlayerItem
-import dev.jdtech.jellyfin.models.Track
+import dev.jdtech.jellyfin.player.core.domain.models.Track
+import dev.jdtech.jellyfin.player.local.presentation.PlayerViewModel
 import dev.jdtech.jellyfin.presentation.theme.spacings
 import dev.jdtech.jellyfin.ui.components.player.VideoPlayerControlsLayout
 import dev.jdtech.jellyfin.ui.components.player.VideoPlayerMediaButton
@@ -43,17 +55,19 @@ import dev.jdtech.jellyfin.ui.components.player.VideoPlayerSeeker
 import dev.jdtech.jellyfin.ui.components.player.VideoPlayerState
 import dev.jdtech.jellyfin.ui.components.player.rememberVideoPlayerState
 import dev.jdtech.jellyfin.utils.handleDPadKeyEvents
-import dev.jdtech.jellyfin.viewmodels.PlayerActivityViewModel
 import kotlinx.coroutines.delay
 import java.util.Locale
+import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun PlayerScreen(
-    items: Array<PlayerItem>,
+    itemId: UUID,
+    itemKind: String,
+    startFromBeginning: Boolean,
     // resultRecipient: ResultRecipient<VideoPlayerTrackSelectorDialogDestination, VideoPlayerTrackSelectorDialogResult>,
 ) {
-    val viewModel = hiltViewModel<PlayerActivityViewModel>()
+    val viewModel = hiltViewModel<PlayerViewModel>()
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -146,6 +160,26 @@ fun PlayerScreen(
     }
      */
 
+    // Media Segments
+    val segment = uiState.currentSegment
+    if (segment != null && !videoPlayerState.controlsVisible) {
+        val skipButtonFocusRequester = remember { FocusRequester() }
+
+        SkipButton(
+            stringRes = uiState.currentSkipButtonStringRes,
+            onClick = {
+                viewModel.skipSegment(segment)
+            },
+            skipButtonFocusRequester = skipButtonFocusRequester,
+        )
+
+        LaunchedEffect(videoPlayerState.controlsVisible) {
+            if (!videoPlayerState.controlsVisible) {
+                skipButtonFocusRequester.requestFocus()
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .dPadEvents(
@@ -159,7 +193,11 @@ fun PlayerScreen(
                 PlayerView(context).also { playerView ->
                     playerView.player = viewModel.player
                     playerView.useController = false
-                    viewModel.initializePlayer(items)
+                    viewModel.initializePlayer(
+                        itemId = itemId,
+                        itemKind = itemKind,
+                        startFromBeginning = startFromBeginning,
+                    )
                     playerView.setBackgroundColor(
                         context.resources.getColor(
                             android.R.color.black,
@@ -252,7 +290,7 @@ fun VideoPlayerControls(
                     state = state,
                     isPlaying = isPlaying,
                     onClick = {
-                        val tracks = getTracks(player, C.TRACK_TYPE_AUDIO)
+                        // val tracks = getTracks(player, C.TRACK_TYPE_AUDIO)
                         // navigator.navigate(VideoPlayerTrackSelectorDialogDestination(C.TRACK_TYPE_AUDIO, tracks))
                     },
                 )
@@ -261,13 +299,49 @@ fun VideoPlayerControls(
                     state = state,
                     isPlaying = isPlaying,
                     onClick = {
-                        val tracks = getTracks(player, C.TRACK_TYPE_TEXT)
+                        // val tracks = getTracks(player, C.TRACK_TYPE_TEXT)
                         // navigator.navigate(VideoPlayerTrackSelectorDialogDestination(C.TRACK_TYPE_TEXT, tracks))
                     },
                 )
             }
         },
     )
+}
+
+@Composable
+private fun SkipButton(
+    stringRes: Int,
+    onClick: () -> Unit,
+    skipButtonFocusRequester: FocusRequester,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(MaterialTheme.spacings.large)
+            .zIndex(1f),
+        contentAlignment = Alignment.BottomEnd,
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = Modifier.focusRequester(skipButtonFocusRequester),
+            glow = ButtonDefaults.glow(
+                focusedGlow = Glow(
+                    elevationColor = Color.Gray,
+                    elevation = 20.dp,
+                ),
+            ),
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_skip_forward),
+                contentDescription = null,
+            )
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Text(
+                text = stringResource(stringRes),
+                color = Color.Black,
+            )
+        }
+    }
 }
 
 private fun Modifier.dPadEvents(

@@ -21,7 +21,7 @@ data class FindroidShow(
     override val playbackPositionTicks: Long = 0L,
     override val unplayedItemCount: Int?,
     val genres: List<String>,
-    val people: List<FindroidPerson>,
+    val people: List<FindroidItemPerson>,
     override val runtimeTicks: Long,
     val communityRating: Float?,
     val officialRating: String?,
@@ -30,7 +30,7 @@ data class FindroidShow(
     val endDate: DateTime?,
     val trailer: String?,
     override val images: FindroidImages,
-    override val chapters: List<FindroidChapter>? = null,
+    override val chapters: List<FindroidChapter> = emptyList(),
 ) : FindroidItem
 
 fun BaseItemDto.toFindroidShow(

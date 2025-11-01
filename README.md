@@ -51,6 +51,10 @@ I am developing this application in my spare time.
 - Media chapters
   - Timeline markers
   - Chapter navigation gestures
+- Trickplay (requires Jellyfin 10.9 or higher)
+- Media segments (requires Jellyfin 10.10 or higher)
+  - Skip button
+  - Auto skip
 
 ## Planned features
 - Android TV
@@ -58,7 +62,7 @@ I am developing this application in my spare time.
 - Chromecast support
 
 ## Translating
-[JDTech Weblate](https://weblate.jdtech.dev) is a selfhosted instance of Weblate where you can translate this project and future projects of mine.
+[JDTech Weblate](https://weblate.jdtech.dev) is a self-hosted instance of Weblate where you can translate this project and future projects of mine.
 
 ## Questions?
 [![](https://dcbadge.vercel.app/api/server/tg5VvTFwTV)](https://discord.gg/tg5VvTFwTV)\

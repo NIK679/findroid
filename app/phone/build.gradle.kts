@@ -5,24 +5,24 @@ plugins {
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.androidx.navigation.safeargs)
     alias(libs.plugins.hilt)
     alias(libs.plugins.aboutlibraries)
+    alias(libs.plugins.aboutlibraries.android)
     alias(libs.plugins.ktlint)
 }
 
 android {
     namespace = "dev.jdtech.jellyfin"
-    compileSdk = Versions.compileSdk
-    buildToolsVersion = Versions.buildTools
+    compileSdk = Versions.COMPILE_SDK
+    buildToolsVersion = Versions.BUILD_TOOLS
 
     defaultConfig {
         applicationId = "dev.jdtech.jellyfin"
-        minSdk = Versions.minSdk
-        targetSdk = Versions.targetSdk
+        minSdk = Versions.MIN_SDK
+        targetSdk = Versions.TARGET_SDK
 
-        versionCode = Versions.appCode
-        versionName = Versions.appName
+        versionCode = Versions.APP_CODE
+        versionName = Versions.APP_NAME
 
         testInstrumentationRunner = "dev.jdtech.jellyfin.HiltTestRunner"
     }
@@ -64,8 +64,8 @@ android {
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
 
-        sourceCompatibility = Versions.java
-        targetCompatibility = Versions.java
+        sourceCompatibility = Versions.JAVA
+        targetCompatibility = Versions.JAVA
     }
 
     buildFeatures {
@@ -83,7 +83,7 @@ android {
 }
 
 ktlint {
-    version.set(Versions.ktlint)
+    version.set(Versions.KTLINT)
     android.set(true)
     ignoreFailures.set(false)
 }
@@ -92,7 +92,7 @@ dependencies {
     implementation(projects.core)
     implementation(projects.data)
     implementation(projects.player.core)
-    implementation(projects.player.video)
+    implementation(projects.player.local)
     implementation(projects.setup)
     implementation(projects.modes.film)
     implementation(projects.settings)
@@ -111,16 +111,15 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material3.adaptive.navigation.suite)
-    implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core)
+    implementation(libs.androidx.fragment)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.lifecycle.viewmodel)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
-    implementation(libs.androidx.navigation.fragment)
-    implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.paging)
     implementation(libs.androidx.paging.compose)
     implementation(libs.androidx.recyclerview)
@@ -140,6 +139,5 @@ dependencies {
     coreLibraryDesugaring(libs.android.desugar.jdk)
 
     implementation(libs.kotlinx.serialization.json)
-    implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
 }
